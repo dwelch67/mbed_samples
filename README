@@ -1,0 +1,48 @@
+
+This is a collection of sample programs, in some respects building
+on each other for the mbed (http://mbed.org) platform.
+
+These samples are intended to demonstrate how to use the platform
+without using the web compiler or mbed api.  This will hopefully
+get you kick started into learning to program the hardware directly
+using the reference material provided by the vendor(s).
+
+At a minimum you will need some documents, starting at
+
+http://mbed.org
+
+go to the handbook page (Handbook link top right of page)
+
+http://mbed.org/handbook
+
+At the bottom of the page (before the comments start) go to the
+hardware page (mbed NXP LPC1768 link)
+
+http://mbed.org/handbook/mbed-NXP-LPC1768
+
+Near the bottom of that page are two documents you need, first
+is the schematic
+
+http://mbed.org/media/uploads/chris/mbed-005.1.pdf
+
+The second is the LPC1768 users manual
+
+http://ics.nxp.com/support/documents/microcontrollers/pdf/user.manual.lpc17xx.pdf
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Start with the blinker programs, blinker01, blinker02, blinker03, etc.
+
+
