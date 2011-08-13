@@ -1,14 +1,16 @@
 
 extern void PUT8 ( unsigned int, unsigned int );
 extern unsigned int GET8 ( unsigned int );
-extern void dummy ( void );
+extern void dummy ( unsigned int );
 
 void dowait ( void )
 {
     unsigned int ra;
 
-    ra=0x20000;
-    while(ra--) dummy();
+    for(ra=0x20000;ra;ra--)
+    {
+        dummy(ra);
+    }
 }
 
 void notmain ( void )
@@ -60,41 +62,6 @@ void notmain ( void )
         PUT8(rb,rf);
         dowait();
     }
-
-    //while(1)
-    //{
-        //PUT8(0x2009C03A,0x80);
-        //PUT8(0x2009C03E,0x20);
-        //PUT8(0x2009C03E,0x10);
-        //PUT8(0x2009C03E,0x04);
-        //dowait();
-        //PUT8(0x2009C03E,0x80);
-        //PUT8(0x2009C03A,0x20);
-        //PUT8(0x2009C03E,0x10);
-        //PUT8(0x2009C03E,0x04);
-        //dowait();
-        //PUT8(0x2009C03E,0x80);
-        //PUT8(0x2009C03E,0x20);
-        //PUT8(0x2009C03A,0x10);
-        //PUT8(0x2009C03E,0x04);
-        //dowait();
-        //PUT8(0x2009C03E,0x80);
-        //PUT8(0x2009C03E,0x20);
-        //PUT8(0x2009C03E,0x10);
-        //PUT8(0x2009C03A,0x04);
-        //dowait();
-        //PUT8(0x2009C03E,0x80);
-        //PUT8(0x2009C03E,0x20);
-        //PUT8(0x2009C03A,0x10);
-        //PUT8(0x2009C03E,0x04);
-        //dowait();
-        //PUT8(0x2009C03E,0x80);
-        //PUT8(0x2009C03A,0x20);
-        //PUT8(0x2009C03E,0x10);
-        //PUT8(0x2009C03E,0x04);
-        //dowait();
-    //}
-
 
 }
 

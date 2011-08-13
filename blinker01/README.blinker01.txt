@@ -32,7 +32,21 @@ tools.  And if you want pay for tool support, they are in the business
 of providing that.  Since these examples do not use C libraries and
 try to avoid gcclib libraries either the linux gnueabi or the non-linux
 eabi version (change the ARMGNU environment variable in the Makefiles
-to switch).
+to switch).  At Codesourcerys website, at the moment the product
+is named codebench (it has changed names over time, and perhaps will
+again).  go to codebench, editions, lite, select arm and then select
+download the current release.  Ideally for this type of work you want
+the EABI edition, I also cross compile embedded Linux binaries and use
+the GNU/Linux edition, there will be times that you get errors trying
+to find some gcc library call like an integer divide, and sometimes
+using the eabi build instead of the linux-gnueabi build allows the
+tool to find the right one (sometimes not).  Also note if you are
+on an ubuntu 64 bit host computer, these (and perhaps other) binaries
+you download are 32 bit.  you need to sudo apt-get install ia32-libs
+so that your 64 bit linux can execute 32 bit binaries.  Otherwise, even
+though the binaries are in the path it will say cannot find such and such
+gcc file, it will drive you crazy, you can specify the entire filename
+and it will say file not found.
 
 Llvm also provides source code and you can build those tools yourself.
 Binaries are available, and for now it is easier to just get a pre-built
