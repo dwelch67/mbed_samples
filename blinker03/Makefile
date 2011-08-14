@@ -82,21 +82,12 @@ blinker03.clang.thumb2.opt.bin : memmap vectors.o blinker03.clang.bc
 
 
 
-
-
-
-
-
-
-
-
-
 clean:
-	rm *.bin
-	rm *.o
-	rm *.elf
-	rm *.list
-	rm *.bc
-	rm *.opt.s
-	rm *.norm.s
+	rm -f *.bin
+	rm -f *.o
+	rm -f *.elf
+	rm -f *.list
+	rm -f *.bc
+	rm -f *.opt.s
+	rm -f *.norm.s
 
