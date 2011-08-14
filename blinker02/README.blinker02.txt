@@ -12,8 +12,8 @@ I have seen in the past that when you have a main() the linker wants
 to drag in other libraries.  Using a non-standard name emphasises
 this is an embedded program, assembler with some code written in C for
 simplicity as opposed to a desktop C application running on an
-operating system making C and system api calls, etc.  Likewise, I have
-seen every compiler I have used mess up when generating memory (and I/O)
+operating system making C and system api calls, etc.  Also, I have
+seen every compiler I had used mess up when generating memory (I/O)
 accesses using the wrong instruction.  A 32 bit register that gets
 optimized into an 8 bit access.  Yep, volatile and all the keywords you
 have learned would not fix it.  In addition much of my work involves
@@ -24,7 +24,7 @@ to abstract the hardware the C code uses PUT8(), GET8(), PUT32(),
 GET32(), etc.  You take a cost in performance (you are using C with
 gcc or llvm you are already not interested in performance) but get
 paid back ten fold in flexibility, debugging, etc.  These memory/register
-access functions are also implemented in assembler.  Normally I use
+access functions are implemented in assembler.  Normally I use
 a separate file like putget.s but since this is a small, simple example
 and vectors.s is already there they have been implemented in vectors.s.
 (yes I know that ldrb [r0],r0 is not supported on some ARM cores).
@@ -35,9 +35,9 @@ for no particular reason) and use a simple counter based delay loop
 to slow the on/off times so that we can see them with our slow human
 eyes.  Volatile and not-optimizing could/would avoid this but by
 using an external function (not found until link time) in the delay
-loop (dummy()) we force the compiler to generate the counter loop.
-It is a quick and easy way to prevent the optimizer from removing code
-you want present to intentially slow things down.
+loop we force the compiler to generate the counter loop.  It is a quick
+and easy way to prevent the optimizer from removing code you want
+present to intentially slow things down.
 
 Because this program is in C and it uses a counter based delay loop
 it is expected to be a little to a lot slower than the assembly only
@@ -59,16 +59,23 @@ bytecode format finally to the target specific assembler then binutils
 is used to take it the last mile.  Up to the point that llc is used
 the steps are not target specific, its not ARM code until llc, you would
 use the same steps if targeting a powerpc or msp430 or whatever.  gcc
-has nothing remotely close to resembling this flexibility and functionality.
+has nothing remotely close to resembling this flexibility and
+functionality.
 
 Using -nostdlib -nostartfiles -ffreestanding on the gcc command line as
 a general habit tells gnu not to try to include C/C++ libraries, I
 will provide my own _start: entry point, etc.  Basically undo all the
 fancy stuff and go back to making this just a C to asm or in this
-case assembled asm compiler.  dont need to do that with clang, there
-will be times where clang specific command line options will be needed
-when the compiler tries to include llvm specific library calls
-that dont match the similar gcc library calls.
+case assembled asm compiler.  These items man not make sense when
+compile to object -c is used, I always have them there just in case
+I have to let gcc do the assembling and linking.  (same as ld, the
+order of the items on the command line affects who is where in the
+binary (unless the linker script calls objects out specifically)).
+We do not need to do any of this with clang, there will be times where
+clang specific command line options will be needed when the compiler
+tries to include llvm specific library calls that dont match the
+similar gcc library calls, for example.  But for these samples we
+dont have to add much to clang.
 
 This code does not use any of the standard include files, no include
 files for that matter.  Because no C or operating specific libraries
@@ -96,18 +103,19 @@ void myfun ( void )
    ...
 }
 
-HUGE difference.  In one case the constant 7 is in the .data segment
-in the other case the 7 is in the isntructions in the .text segment.
-If you look at the blinker01 README you will understand the concept.
-If you have a .data segment (separate from a .bss segment) then you
-have to have boot code that copies the .data segment from rom to the
-right location in ram.  This is more work, more stuff to maintain, etc.
-Likewise you have to get that .data segment into the rom in the first
-place.  There are probably linker script ways to do this but you start
-to get very toolchain dependent.  It is a very good programming habit
-to initialize your variables before you use them and I am happy to see
-that gcc is starting to give warnings about this.  Basically never assume
-that the variable initializes to zero:
+There is a noticeable difference.  In one case the constant 7 is in
+the .data segment in the other case the 7 is in the instructions in
+the .text segment.  If you look at the blinker01 README you will
+understand the concept. If you have a .data segment (separate from
+a .bss segment) then you have to have boot code that copies the .data
+segment from rom to the right location in ram.  This is more work,
+more stuff to maintain, etc.  Likewise you have to get that .data
+segment into the rom in the first place.  There are probably linker
+script ways to do this but you start to get very toolchain dependent.
+It is a very good programming habit to initialize your variables before
+you use them and I am happy to see that gcc is starting to give
+warnings about this.  Basically never assume that the variable
+initializes to zero:
 
 unsigned int bob;
 ...
@@ -155,6 +163,7 @@ void myfun ( void )
 
 That makes it a global variable (available only to this function)
 and puts it in the .data segment and we are back to that discussion.
+Not doing it makes the static something that is not haphazardly added.
 
 Yes, all of this "I only do it this way" stuff has to do with this
 sample program.  If you are here and have never booted a processor

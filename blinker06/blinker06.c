@@ -10,8 +10,8 @@ extern unsigned int GET32 ( unsigned int );
 #define STCURR   0xE000E018
 
 #define FIO1DIR2 0x2009C022
-#define FIO1SET2 0x2009C03A;
-#define FIO1CLR2 0x2009C03E;
+#define FIO1SET2 0x2009C03A
+#define FIO1CLR2 0x2009C03E
 
 #define SCS       0x400FC1A0
 #define CLKSRCSEL 0x400FC10C

@@ -13,12 +13,19 @@ These tools are all availble both on windows and linux in particular
 
 http://llvm.org has a well designed set of tools which may have
 originally had other design goals, the side effect is a nice multiple
-target compiler.  The final step, making the binary (elf), builds for
-the development/host system and not the target system.  So these
-examples will use the gnu binutils assembler and linker to take
-the output of the compiler the last mile.   Note the clang compiler
-is used for a number of reasons.  It is a rapidly maturing compiler and
-second to none in the user friendly category.
+target compiler.  When you have binutils or gcc binaries they are
+targeted at a specific processor/family.  With llvm the bulk of it
+is processor independent.  it is possible to only build the backend for
+certain targets but the default is to build for all supported targets
+so a single install set of llvm binaries likeley supports compling for
+several processor families. ARM being one of them with thumb and
+thumb2 support.  It is true, for example if you do this:
+
+  clang myprog.c -o myprog
+
+Only one processor/target is supported with the llvm linker.  The way
+I am using it here is to use it as a cross compiler to assembly, which
+is where all of the targets are supported.
 
 The gnu tools, gcc and binutils are also demonstrated, the same source
 code (where possible) will use both gcc and clang (llvm).  The assembler
@@ -26,23 +33,20 @@ and linker from binutils are used across the board.
 
 Although it is simple to build a gcc cross compiler and target specific
 binutils (instructions will be provided eventually) http://www.codesourcery.com
-provides a free Lite version of their gnu based tools.  All good
-things can be said about Codesourcery and providing gnu based ARM
-tools.  And if you want pay for tool support, they are in the business
-of providing that.  Since these examples do not use C libraries and
-try to avoid gcclib libraries either the linux gnueabi or the non-linux
-eabi version (change the ARMGNU environment variable in the Makefiles
-to switch).  At Codesourcerys website, at the moment the product
-is named codebench (it has changed names over time, and perhaps will
-again).  go to codebench, editions, lite, select arm and then select
+provides a free Lite version of their gnu based tools.   I dont have
+anything but good things to say about Codesourcery providing gnu
+based ARM tools.  And if you want pay for tool support, they are in
+the business of providing that.  Since these examples do not use C
+libraries and try to avoid gcclib libraries, either the linux gnueabi or
+the non-linux eabi version (change the ARMGNU environment variable in
+the Makefiles to switch).  At Codesourcerys website, at the moment the
+product is named codebench (it has changed names over time, and perhaps
+will again).  Go to codebench, editions, lite, select arm and then select
 download the current release.  Ideally for this type of work you want
-the EABI edition, I also cross compile embedded Linux binaries and use
-the GNU/Linux edition, there will be times that you get errors trying
-to find some gcc library call like an integer divide, and sometimes
-using the eabi build instead of the linux-gnueabi build allows the
-tool to find the right one (sometimes not).  Also note if you are
-on an ubuntu 64 bit host computer, these (and perhaps other) binaries
-you download are 32 bit.  you need to sudo apt-get install ia32-libs
+the EABI edition.  Also note if you are on an ubuntu 64 bit host
+computer, these (and perhaps other) binaries you download are 32 bit.
+You need to
+    sudo apt-get install ia32-libs
 so that your 64 bit linux can execute 32 bit binaries.  Otherwise, even
 though the binaries are in the path it will say cannot find such and such
 gcc file, it will drive you crazy, you can specify the entire filename
@@ -77,20 +81,24 @@ on it.  Now on the right side you can download the manual.  You need
 this manual, so if you have to register to get it you have to register
 (Registration is FREE).
 
-A general introduction to this manual.  Teaching ARM/thumb assembly for
-example is beyond the scope of this project.  The instruction set is
-documented here.  Note the difference between the various encodings
-ones like T1 that say All versions of the Thumb instruction set are
-the original 16 bit thumb instructions.  The ones that say ARMv7-M
-are part of the thumb2 instruction set.  Thumb instructions will work
-on other arm platforms back to the ARM7 (ARMv4T), Thumb2 is a new
-32 bit, variable instruction length thing for cores like this.
-My thumbulator instruction set simulator, also at github, is strictly
-the original thumb instruction set and thumb2 instructions are beyond
-the scope.  Programs that work on thumbulator can be transferred almost
-directly to this chip for example, but not necessarily true in the
-other direction.  In addition to gcc and llvm examples, this project
-will show thumb vs thumb2 (where practical).
+Teaching ARM/thumb assembly for example is beyond the scope of this
+project.  But I will give a general introduction to this manual.
+In particular so that you get a feel for differences bewteen the
+cortex-M and the more traditional ARM architecture.  The instruction
+set is documented in this manual, the cortex-m3 only supports thumb
+and thumb2 instructions, ARM instructions are not supported.  Note the
+difference between the various encodings ones like T1 that say All
+versions of the Thumb instruction set are the original 16 bit thumb
+instructions.  The ones that say ARMv7-M are part of the thumb2
+instruction set.  Thumb instructions will work on other arm platforms
+back to the ARM7 (ARMv4T), Thumb2 is a new 32 bit, variable instruction
+length thing for cores like this.  My thumbulator instruction set
+simulator, also at github, is strictly the original thumb instruction
+set and thumb2 instructions are beyond the scope.  Programs that work
+on thumbulator can be transferred almost directly to this chip for
+example, but not necessarily true in the other direction.  In addition
+to gcc and llvm examples, this project will show thumb vs thumb2
+(where practical).
 
 What we need from the ARMv7-M ARM.  If you are an old time
 ARM programmer you are used to a 32 bit, ARM (32 bit instruction),
@@ -119,28 +127,27 @@ So that is the first thing we have in the source blinker01.s
 .word   hang        /* 4 MemManage */
 
 Yep, that means we do not have to initialize the stack pointer manually
-after reset.  by the time you start executing code it is set to whatever
+after reset.  By the time you start executing code it is set to whatever
 you defined.
 
 Now we switch to the LPC1768 users manual.  One of the first chapters
-is the memory map.  This is supposed to be a 65KByte part, we see
+is the memory map.  This is supposed to be a 64KByte part, we see
 that there is up to 32KB of on chip sram 0x10000000 to 0x10007FFF
 and then it says AHB SRAM 16KBytes at 0x2007C000 - 0x2007FFFF
 and 16KBytes at 0x20080000 - 0x20083FFF for devices with 64KBytes
 of total SRAM.  So it sounds like the 64KBytes advertised is total
-memory, not linear, broken into parts.  So as you see above the
-stack pointer will be set to the top of the 32KBytes 0x10008000
-(stack pointer is decremented before used so 0x10008000 means
-the first stack item is at address 0x10007FFC).
-
+memory, but broken into parts.  So as you see above the stack pointer
+will be set to the top of the 32KBytes 0x10008000 (stack pointer is
+decremented before used so 0x10008000 means the first stack item is
+at address 0x10007FFC).
 
 In order to blink the leds we next need to look at the schematic
 
 There are four leds along the short edge of the card.  On the third
 page of the schematic labelled LED-1, LED-2, LED-3, and LED-4.
-We see that those are connected to pins 32, 34, 35, 37.  P1.18, P1.20,
-P1.21, and P1.23.  That is the info we need to take back to the users
-manual.
+We see that those are connected to pins 32, 34, 35, 37.  Which are
+ports  P1.18, P1.20, P1.21, and P1.23.  That is the info we need to
+take back to the users manual.
 
 Note/remember that ARM makes cores, not chips, when it comes time to
 learn about ARM stuff will come from ARM website documents.  The GPIO
@@ -148,8 +155,8 @@ interface, registers, etc are all NXP (a.k.a. LPC, Philips, etc).  Point
 being what you learn here about the GPIO interface is specific to this
 chip and probably similar to other LPC/NXP chips, but the same ARM
 cortex-m3 core in some other vendors chip (ti, stm, etc) are going to
-have different programmers interfaces.  So even if you buy a different
-lpc part you need to go through this exercise every time.
+have different programmers interfaces.  You need to go through this
+exercise every time you change chips.
 
 As of this writing the GPIO chapter in the users guide is
 Chapter 9: LPC17xx General Purpose Input/Output (GPIO).
@@ -189,8 +196,8 @@ FIO1DIR2 0x2009C022
 FIO1SET2 0x2009C03A
 FIO1CLR2 0x2009C03E
 
-Back to the schematic breifly.  We are using 4 I/O pins what else is
-affected by these 8 port registers?
+Back to the schematic breifly.  We are using 4 I/O pins these registers
+affect 8 I/O pins.  What else is affected by these 8 port registers?
 
 P1.16 and P1.17 go to the ethernet phy, looks like MDIO stuff.
 P1.19 and P1.22 are not connected.  The reset value for FIO1DIR2 is
@@ -205,20 +212,26 @@ are defined as not doing anything if you write a zero you can
 change the state of a single I/O pin without affecting the others,
 without having to do a read-modify-write.
 
-We do need to perform a read-modify-write to change our LED GPIO lines
-to be outputs.
+It would be good programming practice to not make assumptions about
+the reset state of these configuration registers.  A compilete driver
+would include configuring all the bits related to the interface.  These
+examples are not necessarily going to use complete drivers.  Another
+argument here would be that this is a very resource limited platform
+and ideally you would deploy a part like this in a system configured
+one way only, as a result generic, proper, drivers consume valuable
+resources.
 
-Then the code goes into an infinite loop that turns one led on and
-the other three off.  Then delays using a counter loop (using timers
-will come in future samples) so that we can see the led blink with
-our eyes.  This sample blinks the leds in a Knight Rider style for those
-old enough to remember that TV show.
+After the I/O lines are configured as outputs, the code goes into an
+infinite loop that turns one led on and the other three off.  Then
+delays using a counter loop (using timers will come in future samples)
+so that we can see the led blink with our eyes.  This sample blinks
+the leds in a Knight Rider style for those old enough to remember that
+TV show.
 
 Examine the Makefile to see the commands needed to build.
 
 Since this example is a single assembler file, llvm/clang is not
-used, since the program is written using thumb instructions thumb2 is
-not demonstrated.
+used.
 
 The gnu assembler (binutils) is used to assemble the source file to
 an object.  The gnu linker is used to take the source file and turn
@@ -237,14 +250,15 @@ MEMORY
 SECTIONS
 {
    .text : { *(.text*) } > rom
+   .bss  : { *(.bss*) } > ram
 }
 
 the names rom and ram are arbitrary, you could use bob and ted here
 it doesnt matter.  Using ram and rom makes it a bit more obvious what
-they are and from the memory map in the users manual you see where
+they are.  From the memory map in the users manual you see where
 these numbers come from (left a couple of KBytes for the stack).
 
-the (RX) and (WAIL) are very important, without those letters in
+The (RX) and (WAIL) are very important, without those letters in
 parenthesis you might have to have a lot more stuff in the linker script
 R and X are Read only and eXecute, basically read-only data like
 const something something data in a C program. And execute is the program
@@ -271,15 +285,19 @@ The second half
 SECTIONS
 {
    .text : { *(.text*) } > rom
+   .bss  : { *(.bs*) } > ram
 }
 
 helps get the .text (machine code, read only data, etc) stuff to go
-to the memory section we want.
+to the memory section we want.  The .bss line appears to be needed
+to get that zero init data into ram.
 
 This is about as minimal of a linker script as you can get, and
 the SECTIONS as defined here does not necessarily work for older
 versions of binutils, and I would not be surprised if some day in the
-future it stops working and I will have to change again.
+future it stops working and I will have to change again.  I didnt not
+create this from scratch I borrowed and tweaked this knowledge from
+other projects similar to this one.
 
 For as many different developers you find examples from, you will find
 as many different linker scripts.  Crafting linker scripts is harder
@@ -322,7 +340,7 @@ put in .text is in .text and what you think is .bss or .data is in fact
 in rom is in ram.
 
 Note that when in thumb mode on an ARM processor the lsbit of the
-program counter is 1.  For processors that support ARM and thumb
+program counter is 1.  For processors that support both ARM and thumb
 instructions the way you branch between ARM code and thumb code
 is through bit 0 of the address.  So exception number 1, reset
 is address 0x5B, but the actual address in ram is 0x5A.  The lsbit
@@ -343,7 +361,7 @@ _start:
 tells the assembler that the _start label is a thumb address, meaning
 set bit 0 of the address.  If you comment out or remove that .thumb_func
 and re-build the binary you will see that the address changes to 0x5A
-which is not correct.
+in the vector table, which is not correct.
 
 The .thumb near the beginning of the file (same as .code 16) tells the
 assembler that what follows is to be assembled as thumb code.  Why
@@ -359,19 +377,14 @@ been at address 0x10000000, objcopy would have created a 0x10000001
 byte .bin file 256MBytes.  Other platforms say you had ram start
 at 0x80000000 that would be a 2 Gigabyte file.  A pretty big mistake,
 so dont use objcopy to create .bin files until you have verified that
-you have not made any mistakes.  You will also make boot code
-programming mistakes on various processor architectures where a pc
-relative branch tries to reach some function, but your assembler
-is say in the rom and this function is in ram and like on this
-platform is farther away than a pc relative branch can reach.
-The linker will give some sort of cryptic error about address fixup
-or something like that.  Those are linker script type problems.
+you have not made any mistakes, or that you need to do more work to
+create a .bin file that will go into a flash/rom.
 
 The beauty of the mbed.org platform is that when you plug a usb cable
-from your computer into it it mountes as a mini usb-flash-drive basically
-a mounted file system.  It expects you to copy a .bin file to this
-virtual flash drive.  The Makefile shows you how to use objcopy to
-copy the actual binary data (rom/ram image) from the elf file into
+from your computer into it it mounts as a mini usb-flash-drive,
+basically a mounted file system.  It expects you to copy a .bin file
+to this virtual flash drive.  The Makefile shows you how to use objcopy
+to copy the actual binary data (rom/ram image) from the elf file into
 a .bin file.  Notice that I prefer to name my cross compiled elf files
 as .elf so as not to be confused with elf files compiled for the host
 system.  Also to help immediately distinguish the various binary formats

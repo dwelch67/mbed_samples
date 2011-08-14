@@ -1,6 +1,7 @@
 
 #ARMGNU=arm-thumb-elf
-ARMGNU=arm-none-linux-gnueabi
+#ARMGNU=arm-none-linux-gnueabi
+ARMGNU?=arm-none-eabi
 
 all : blinker01.bin
 

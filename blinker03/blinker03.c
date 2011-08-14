@@ -10,9 +10,8 @@ extern unsigned int GET32 ( unsigned int );
 #define STCURR   0xE000E018
 
 #define FIO1DIR2 0x2009C022
-#define FIO1SET2 0x2009C03A;
-#define FIO1CLR2 0x2009C03E;
-
+#define FIO1SET2 0x2009C03A
+#define FIO1CLR2 0x2009C03E
 
 void dowait ( void )
 {
@@ -36,22 +35,9 @@ void notmain ( void )
     PUT8(FIO1DIR2,ra);
 
 
-    //init system timer for polling.
-    //is read-modify-write really necessary?
-if(0)
-{
-    ra=GET32(STCTRL);
-    ra&=(~3); //disable, no interrupts
-    ra|=0x4;  //use cpu clock
-}
-else
-{
-    ra=0x00000004; //disabled, no ints, use cpu clock
-}
-    PUT32(STCTRL,ra);
+    PUT32(STCTRL,0x00000004); //disabled, no ints, use cpu clock
     PUT32(STRELOAD,0xFFFFFFF);
-    ra|=1;    //enable timer
-    PUT32(STCTRL,ra);
+    PUT32(STCTRL,0x00000005); //enabled, no ints, use cpu clock
 
     ra=FIO1SET2;
     rb=FIO1CLR2;
@@ -73,4 +59,3 @@ else
         dowait();
     }
 }
-
