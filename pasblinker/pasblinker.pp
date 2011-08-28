@@ -3,9 +3,9 @@ var
     STCTRL   : DWord absolute $E000E010;
     STRELOAD : DWord absolute $E000E014;
     STCURR   : DWord absolute $E000E018;
-    FIO1DIR2 : DWord absolute $2009C022;
-    FIO1SET2 : DWord absolute $2009C03A;
-    FIO1CLR2 : DWord absolute $2009C03E;
+    FIO1DIR2 : Byte  absolute $2009C022;
+    FIO1SET2 : Byte  absolute $2009C03A;
+    FIO1CLR2 : Byte  absolute $2009C03E;
 
     SCS      : DWord absolute $400FC1A0;
     CLKSRCSEL: DWord absolute $400FC10C;
