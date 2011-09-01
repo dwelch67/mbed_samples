@@ -81,7 +81,7 @@ adventure.gcc.thumb2.bin : adventure.gcc.thumb2.elf
 
 adventure.gcc.thumb2.elf : vectors.o uart.thumb2.o crc.thumb2.o data.thumb2.o done.thumb2.o init.thumb2.o io.thumb2.o main.thumb2.o show.thumb2.o subr.thumb2.o vocab.thumb2.o wizard.thumb2.o
 	#$(ARMGNU)-gcc $(COPS2) -Xlinker memmap -o adventure.gcc.thumb2.elf vectors.o uart.thumb2.o crc.thumb2.o data.thumb2.o done.thumb2.o init.thumb2.o io.thumb2.o main.thumb2.o show.thumb2.o subr.thumb2.o vocab.thumb2.o wizard.thumb2.o -lgcc
-	$(ARMGNU)-ld -T memmap -o adventure.gcc.thumb2.elf vectors.thumb2.o uart.thumb2.o crc.thumb2.o data.thumb2.o done.thumb2.o init.thumb2.o io.thumb2.o main.thumb2.o show.thumb2.o subr.thumb2.o vocab.thumb2.o wizard.thumb2.o
+	$(ARMGNU)-ld -T memmap -o adventure.gcc.thumb2.elf vectors.o uart.thumb2.o crc.thumb2.o data.thumb2.o done.thumb2.o init.thumb2.o io.thumb2.o main.thumb2.o show.thumb2.o subr.thumb2.o vocab.thumb2.o wizard.thumb2.o
 	$(ARMGNU)-objdump -D adventure.gcc.thumb2.elf > adventure.gcc.thumb2.list
 
 

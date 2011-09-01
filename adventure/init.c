@@ -40,6 +40,8 @@
 #include "hdr.h"
 #include "extern.h"
 
+unsigned int hexstring ( unsigned int d, unsigned int cr );
+
 //void srandy ( unsigned int );
 
 int     blklin;
