@@ -1,6 +1,7 @@
 
 Well here is a fun one.  The freepascal.org folks are working on an
-embedded pascal compiler.  It is not hard to add a target and start using it.
+embedded pascal compiler.  The lpc1768 is supported so we can start
+using it.
 
 
 You will need a binutils with the right arm-embedded- prefix.
@@ -9,7 +10,7 @@ You will need a binutils with the right arm-embedded- prefix.
 
 If you dont have wget then just use the link in a web browser
 
-Will need these things in order to build binutils
+You might will need these things in order to build binutils
 
 > sudo apt-get install build-essential libmpfr-dev libgmp3-dev libmpc-dev
 
@@ -35,19 +36,6 @@ Get the sources to fpc
 > svn co http://svn.freepascal.org/svn/fpc/trunk fpc
 > cd fpc
 
-This example was tested against a specific revision, you might
-want/need that revision
-
-> svn up -r 18871
-
-Copy the fpc_embedded.patch file to the fpc directory
-
-> cp /path/to/fpc_embedded.patch .
-
-Then patch it
-
-> patch -p0 < fpc_embedded.patch
-
 And build it.
 
 > make clean buildbase installbase CROSSINSTALL=1 OS_TARGET=embedded CPU_TARGET=arm SUBARCH=armv7m
@@ -58,7 +46,7 @@ Copy the pasblinker.pp file here
 
 Compile the pascal program
 
-> ./compiler/ppcrossarm -Parm -Tembedded -Wpmbed -Cparmv7m pasblinker.pp
+> ./compiler/ppcrossarm -Parm -Tembedded -Wplpc1768 -Cparmv7m pasblinker.pp
 > arm-embedded-objcopy pasblinker.elf -O binary pasblinker.bin
 
 Copy the binary to the mbed board

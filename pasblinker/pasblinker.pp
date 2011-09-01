@@ -1,19 +1,6 @@
 
-var
-    STCTRL   : DWord absolute $E000E010;
-    STRELOAD : DWord absolute $E000E014;
-    STCURR   : DWord absolute $E000E018;
-    FIO1DIR2 : Byte  absolute $2009C022;
-    FIO1SET2 : Byte  absolute $2009C03A;
-    FIO1CLR2 : Byte  absolute $2009C03E;
 
-    SCS      : DWord absolute $400FC1A0;
-    CLKSRCSEL: DWord absolute $400FC10C;
-    PLL0FEED : DWord absolute $400FC08C;
-    PLL0CON  : DWord absolute $400FC080;
-    PLL0CFG  : DWord absolute $400FC084;
-    PLL0STAT : DWord absolute $400FC088;
-    CCLKCFG  : DWord absolute $400FC104;
+{ Registers are defined in fpc/rtl/embedded/arm/lpc1768.pp }
 
 procedure PLL_Init;
 begin
