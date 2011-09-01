@@ -15,9 +15,7 @@ LLCOPS2 = -march=thumb -mcpu=cortex-m3
 OOPS = -std-compile-opts
 
 
-all : adventure.gcc.thumb.bin adventure.gcc.thumb2.bin adventure.clang.thumb2.opt.bin adventure.clang.thumb2.norm.bin
-
-
+all : adventure.gcc.thumb.bin adventure.gcc.thumb2.bin adventure.clang.thumb2.opt.bin adventure.clang.thumb2.norm.bin adventure.clang.thumb.opt.bin adventure.clang.thumb.norm.bin
 
 
 vectors.o : vectors.s
@@ -38,8 +36,8 @@ adventure.gcc.thumb.bin : adventure.gcc.thumb.elf
 	$(ARMGNU)-objcopy adventure.gcc.thumb.elf -O binary adventure.gcc.thumb.bin
 
 adventure.gcc.thumb.elf : vectors.o uart.thumb.o crc.thumb.o data.thumb.o done.thumb.o init.thumb.o io.thumb.o main.thumb.o show.thumb.o subr.thumb.o vocab.thumb.o wizard.thumb.o
-	$(ARMGNU)-gcc $(COPS) -Xlinker memmap -o adventure.gcc.thumb.elf vectors.o uart.thumb.o crc.thumb.o data.thumb.o done.thumb.o init.thumb.o io.thumb.o main.thumb.o show.thumb.o subr.thumb.o vocab.thumb.o wizard.thumb.o -lgcc
-	#$(ARMGNU)-ld -T memmap -o adventure.gcc.thumb.elf vectors.thumb.o uart.thumb.o crc.thumb.o data.thumb.o done.thumb.o init.thumb.o io.thumb.o main.thumb.o show.thumb.o subr.thumb.o vocab.thumb.o wizard.thumb.o
+	#$(ARMGNU)-gcc $(COPS) -Xlinker memmap -o adventure.gcc.thumb.elf vectors.o uart.thumb.o crc.thumb.o data.thumb.o done.thumb.o init.thumb.o io.thumb.o main.thumb.o show.thumb.o subr.thumb.o vocab.thumb.o wizard.thumb.o -lgcc
+	$(ARMGNU)-ld -T memmap -o adventure.gcc.thumb.elf vectors.o uart.thumb.o crc.thumb.o data.thumb.o done.thumb.o init.thumb.o io.thumb.o main.thumb.o show.thumb.o subr.thumb.o vocab.thumb.o wizard.thumb.o gcclib/_divsi3.o gcclib/_udivsi3.o gcclib/_thumb1_case_uqi.o gcclib/_thumb1_case_shi.o
 	$(ARMGNU)-objdump -D adventure.gcc.thumb.elf > adventure.gcc.thumb.list
 
 
@@ -82,8 +80,8 @@ adventure.gcc.thumb2.bin : adventure.gcc.thumb2.elf
 	$(ARMGNU)-objcopy adventure.gcc.thumb2.elf -O binary adventure.gcc.thumb2.bin
 
 adventure.gcc.thumb2.elf : vectors.o uart.thumb2.o crc.thumb2.o data.thumb2.o done.thumb2.o init.thumb2.o io.thumb2.o main.thumb2.o show.thumb2.o subr.thumb2.o vocab.thumb2.o wizard.thumb2.o
-	$(ARMGNU)-gcc $(COPS2) -Xlinker memmap -o adventure.gcc.thumb2.elf vectors.o uart.thumb2.o crc.thumb2.o data.thumb2.o done.thumb2.o init.thumb2.o io.thumb2.o main.thumb2.o show.thumb2.o subr.thumb2.o vocab.thumb2.o wizard.thumb2.o -lgcc
-	#$(ARMGNU)-ld -T memmap -o adventure.gcc.thumb2.elf vectors.thumb2.o uart.thumb2.o crc.thumb2.o data.thumb2.o done.thumb2.o init.thumb2.o io.thumb2.o main.thumb2.o show.thumb2.o subr.thumb2.o vocab.thumb2.o wizard.thumb2.o
+	#$(ARMGNU)-gcc $(COPS2) -Xlinker memmap -o adventure.gcc.thumb2.elf vectors.o uart.thumb2.o crc.thumb2.o data.thumb2.o done.thumb2.o init.thumb2.o io.thumb2.o main.thumb2.o show.thumb2.o subr.thumb2.o vocab.thumb2.o wizard.thumb2.o -lgcc
+	$(ARMGNU)-ld -T memmap -o adventure.gcc.thumb2.elf vectors.thumb2.o uart.thumb2.o crc.thumb2.o data.thumb2.o done.thumb2.o init.thumb2.o io.thumb2.o main.thumb2.o show.thumb2.o subr.thumb2.o vocab.thumb2.o wizard.thumb2.o
 	$(ARMGNU)-objdump -D adventure.gcc.thumb2.elf > adventure.gcc.thumb2.list
 
 
@@ -162,8 +160,8 @@ adventure.clang.bc : crc.clang.bc data.clang.bc done.clang.bc init.clang.bc io.c
 adventure.clang.thumb.norm.bin : memmap vectors.o adventure.clang.bc
 	llc $(LLCOPS) adventure.clang.bc -o adventure.clang.thumb.norm.s
 	$(ARMGNU)-as adventure.clang.thumb.norm.s -o adventure.clang.thumb.norm.o
-	#$(ARMGNU)-ld -o adventure.clang.thumb.norm.elf -T memmap vectors.o adventure.clang.thumb.norm.o
-	$(ARMGNU)-gcc -o adventure.clang.thumb.norm.elf -Xlinker memmap vectors.o adventure.clang.thumb.norm.o -lgcc
+	$(ARMGNU)-ld -o adventure.clang.thumb.norm.elf -T memmap vectors.o adventure.clang.thumb.norm.o gcclib/_modsi3.o gcclib/_divsi3.o gcclib/_umodsi3.o
+	#$(ARMGNU)-gcc -o adventure.clang.thumb.norm.elf -Xlinker memmap vectors.o adventure.clang.thumb.norm.o -lgcc
 	$(ARMGNU)-objdump -D adventure.clang.thumb.norm.elf > adventure.clang.thumb.norm.list
 	$(ARMGNU)-objcopy adventure.clang.thumb.norm.elf adventure.clang.thumb.norm.bin -O binary
 
@@ -171,8 +169,8 @@ adventure.clang.thumb.opt.bin : memmap vectors.o adventure.clang.bc
 	opt $(OOPS) adventure.clang.bc -o adventure.clang.thumb.opt.bc
 	llc $(LLCOPS) adventure.clang.thumb.opt.bc -o adventure.clang.thumb.opt.s
 	$(ARMGNU)-as adventure.clang.thumb.opt.s -o adventure.clang.thumb.opt.o
-	#$(ARMGNU)-ld -o adventure.clang.thumb.opt.elf -T memmap vectors.o adventure.clang.thumb.opt.o
-	$(ARMGNU)-gcc -o adventure.clang.thumb.opt.elf -Xlinker memmap vectors.o adventure.clang.thumb.opt.o -lgcc
+	$(ARMGNU)-ld -o adventure.clang.thumb.opt.elf -T memmap vectors.o adventure.clang.thumb.opt.o gcclib/_modsi3.o gcclib/_divsi3.o gcclib/_umodsi3.o
+	#$(ARMGNU)-gcc -o adventure.clang.thumb.opt.elf -Xlinker memmap vectors.o adventure.clang.thumb.opt.o -lgcc
 	$(ARMGNU)-objdump -D adventure.clang.thumb.opt.elf > adventure.clang.thumb.opt.list
 	$(ARMGNU)-objcopy adventure.clang.thumb.opt.elf adventure.clang.thumb.opt.bin -O binary
 
