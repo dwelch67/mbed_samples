@@ -1,0 +1,13 @@
+
+/* memmap */
+MEMORY
+{
+   ram : ORIGIN = 0x10000000, LENGTH = 30K
+}
+
+SECTIONS
+{
+   .text : { *(.text*) } > ram
+   .bss  : { *(.bss*) } > ram
+}
+
