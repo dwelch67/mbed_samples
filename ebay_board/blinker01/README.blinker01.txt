@@ -153,3 +153,27 @@ see if you cant get the led on ir see if you are really connected to
 the processor.  type help at the openocd prompt to get a list of
 all the commands.
 
+
+
+Trashing, I mean writing to rom/flash.  Some docs talk about a bootloader
+and that you should base your program at address 0x2000, well I didnt
+do that, I based mine at 0x00000000.  See blinker01 in the rom directory.
+
+Same jtag setup as the ram stuff above, in the rom dir though.
+
+Not sure if it took several iterations or what, but where I am now
+to write my program to flash, so that when I press reset my flash based
+program runs:
+
+OPENOCD TERMINAL PROMPT:
+
+> halt
+> flash write_image erase blinker01.elf
+
+Then press reset.
+
+
+
+
+
+
