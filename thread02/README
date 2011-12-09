@@ -1,0 +1,4 @@
+
+Derived from thread01.  The scheduler manages the timer so that it can
+send messages to the threads at certain time intervals.
+
