@@ -1,0 +1,52 @@
+
+This is a collection of sample programs, in some respects building
+on each other for the mbed (http://mbed.org) platform.  This subdirectory
+the mzero subdirectory, specifically is for the lpc11u24 based mbed.
+The main directory is for the original lpc17xx based mbed.  The lpc11u24
+uses a cortex-m0 ARM core.
+
+These samples are intended to demonstrate how to use the platform
+without using the web compiler or mbed api.  This will hopefully
+get you kick started into learning to program the hardware directly
+using the reference material provided by the vendor(s).
+
+At a minimum you will need some documents, starting at
+
+http://mbed.org
+
+go to the handbook page (Handbook link top right of page)
+
+http://mbed.org/handbook
+
+This web page appears to keep changing, at the moment near the top
+of the page under About mbed find the link for the LPC11U24 based
+mbed:
+
+http://mbed.org/handbook/mbed-NXP-LPC11U24
+
+You are going to need the schematic
+
+http://mbed.org/media/uploads/chris/mbed-010.2-schematic.pdf
+
+Then follow the link to the LPC11U24 homepage at nxp.
+
+http://www.nxp.com/products/microcontrollers/cortex_m0/lpc11u00/LPC11U24FBD64.html
+
+There is a link to a zip file called all documentation, you may find some
+interesting information there but it does not have the users manual
+which is the most important of the programming manuals as it has all
+the register/memory addresses and descriptions.  I struggled to find
+this manual for this processor then eventually did, the problem is it
+is listed as the LPC11Uxx manual and when you look inside you see it
+is the LPC11Uxx manual.
+
+user manuals for the nxp cortex-m0 processors
+
+http://www.nxp.com/technical-support-portal/50809/71391/user-manuals
+
+And specifically what is at the moment shown on the nxp website as
+the LPC11U1x user manual:
+
+http://www.nxp.com/documents/user_manual/UM10462.pdf
+
+For now start with the blinker02 example and go from there.

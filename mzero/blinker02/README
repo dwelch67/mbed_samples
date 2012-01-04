@@ -1,0 +1,44 @@
+
+This sample is derived from the blinker02 sample for the lpc17xx based
+mbed board.  See the blinker01 and blinker02 samples for that board
+for more information on where to get gnu and llvm tools.
+
+The lpc11u24 has a cortex-m0 not a cortex-m3.  The cortex-m0 and cortex-m1
+ARM cores are basically thumb only, they do not support the 32 bit thumb2
+instructions.
+
+This processor has fewer gpio ports and a simpler gpio than the other
+mbed processor.  Looking at the schematic the leds on this board are
+on port 1 pins 8,9,10,11.
+
+This sample demonstrates booting the processor using a little bit
+of assembler but the bulk of the program being written in C.
+
+vectors.s is the vector table that is used when the processor boots
+or has an exception or interrupt.  The first 32 bits entry in this table
+is the value that will be loaded in the stack pointer on boot/reset.
+The second entry is the reset vector, the address the processor finds
+the boot code on a reset.  Note because this is thumb mode the lsbit
+has to be set.  the reset code very quickly calls notmain().  Why notmain()
+instead of main()?  I have seen compilers add stuff when you have main()
+in the project.  This also emphasises this an embeded program, assembler
+with some code written in C for simplicity.  This is not a desktop
+application running on an operating system.
+
+blinker02.c contains the bulk of the sample code.  Very similar to
+blinker01.s, we turn on one led at a time (turning off the other three
+for no particular reason) and use a simple counter based delay loop
+to slow the on/off times so that we can see them with our slow human
+eyes.  Volatile and not-optimizing could/would avoid this but by
+using an external function (not found until link time) in the delay
+loop we force the compiler to generate the counter loop.  It is a quick
+and easy way to prevent the optimizer from removing code you want
+present to intentially slow things down.
+
+for this chip the gpio port is enabled on boot, some microcontrollers
+you have to turn on or enable the gpio port before using it.  The
+registers to interest are the direction register where we define
+the four pins to be outputs, and then a set and clear set of registers
+which make it very easy to set (vcc) or clear (gnd or zero volts) the
+output pin.  The clr and set registers avoid the need for a read-modify-write
+similar to the one needed for the dir register.
