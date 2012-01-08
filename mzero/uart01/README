@@ -1,0 +1,32 @@
+
+The blinker programs have established what our clock rate is.  Next step
+is to set up the uart so we can print stuff out, interact, whatever.
+
+The USART chapter mentions:
+
+The USART is configured as follows:
+- Pins: The USART pins must be configured in the corresponding IOCON
+    registers
+- The USART block is enabled through the SYSAHBCLKCTRL register
+- The peripheral USART clock (PCLK), which is used by the USART baud
+    rate generator, is controlled by the UARTCLKDIV register
+
+So we enable the usart we enable gpio pins and iocon.  The uart clock
+divide register allows clocks as well, wont work with the default setting
+of PCLK disabled.  There are two output pins that are tied to TXD
+p0.19 and p1.27.  I/O pins on microcontrollers these days are often
+multiplexed, the default setting is for the pins to be general purpose
+I/O (GPIO).  To connect one of these pins to the USART TXD instead
+of the GPIO logic, you have to use the pin configuration registers.
+
+Looking at the schematic one very cool features is the p0.19 pin does
+not go to one of the header pins, it goes to the interface chip.  Basically
+the interface chip echos what it sees over usb.  So you dont need something
+to listen to pin level uart signals, you can just use the usb connection
+you are already using to program the board and to power it.  On linux
+the device is /dev/ttyACM0 or ACM1, etc whatever the next free one is
+when you plug in.
+
+Derived from blinker03 this program still blinks the leds, it sends
+one character out at 115200 per blink.
+
