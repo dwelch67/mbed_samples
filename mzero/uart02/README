@@ -1,0 +1,6 @@
+
+derived from uart01.  whatever you type into your terminal attached
+to the virtual uart over usb comes back.  The mbed interface chip
+handles the usb side of things the target microcontroller is strictly
+using the USART.  uart01 example was TX only this example demonstrates
+both RX and TX on the USART (using polling).
