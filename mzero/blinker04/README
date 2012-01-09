@@ -42,3 +42,14 @@ multiply the clock to a faster rate, whatever the maximum the chip
 is rated for (or the max we can get with this clock source, whichever
 is faster).
 
+
+EDIT:  I added a little safety measure.  If the clock init code sees
+PIN0.7 shorted to ground it will not continue configuring the clocks.
+PIN0.7 is PIN21 on the mbed LPC11U24 board, the opposite corner from
+ground.  If you want to mess with the clock init code and make a mistake
+then short PIN21 to ground and it will leave the internal 12MHz clock
+as the clock source allowing the mbed interface to recover/reprogram
+the microcontroller.  Press reset with PIN21 shorted and your program
+will run but possibly at the wrong clock rate.  Copy a different program
+and press reset and it will load that allowing you to remove the jumper
+and trying again.

@@ -1,4 +1,5 @@
 
+
 extern void PUT32 ( unsigned int, unsigned int );
 extern unsigned int GET32 ( unsigned int );
 extern unsigned int PUTGETCLR ( unsigned int, unsigned int );
@@ -16,6 +17,7 @@ extern void dummy ( unsigned int );
 #define GPIO_W05 (GPIO_BASE+0x1014)
 #define GPIO_W06 (GPIO_BASE+0x1018)
 #define GPIO_W07 (GPIO_BASE+0x101C)
+
 
 #define GPIO_DIR0 (GPIO_BASE+0x2000)
 #define GPIO_PIN0 (GPIO_BASE+0x2100)
@@ -38,6 +40,9 @@ extern void dummy ( unsigned int );
 #define MAINCLKUEN      0x40048074
 #define SYSAHBCLKCTRL   0x40048080
 #define SYSAHBCLKDIV    0x40048078
+#define SYSPLLCTRL      0x40048008
+#define SYSPLLSTAT      0x4004800C
+
 
 #define PIO0_7          0x4004401C
 
@@ -78,9 +83,8 @@ int clock_init ( void )
         }
     }
 
-
     PUTGETCLR(PDRUNCFG,1<<5); //power up system oscillator
-    PUT32(SYSOSCCTRL,0x00000000); //DO NOT BYPASS PLL HERE
+    PUT32(SYSOSCCTRL,0x00000000);
     for(ra=0;ra<200;ra++) dummy(0); //kill some time for it to come up
 
     PUT32(SYSPLLCLKSEL,0x00000001); //select crystal oscillator as pll input
@@ -88,14 +92,23 @@ int clock_init ( void )
     PUT32(SYSPLLCLKUEN,0x00000000);
     PUT32(SYSPLLCLKUEN,0x00000001);
     while((GET32(SYSPLLCLKUEN)&0x00000001)==0) continue; //wait for it to become the pll input
+    //if you are using the pll
+    if(1)
+    {
+        //M = 4 (3+1), P = 2 (1*2)  P is for the PLL not a divisor of the
+        //main clock.  So this results in 12 * 4 / SYSAHBCLKDIV
+        PUT32(SYSPLLCTRL,0x00000023);
+        PUTGETCLR(PDRUNCFG,1<<7); //power up system pll
+        while((GET32(SYSPLLSTAT)&0x00000001)==0) continue; //wait for PLL to lock
+    }
 
-    PUT32(MAINCLKSEL,0x00000001); //select main clock source, pll input
+    PUT32(MAINCLKSEL,0x00000003); //select main clock source, pll output
     PUT32(MAINCLKUEN,0x00000001);
     PUT32(MAINCLKUEN,0x00000000);
     PUT32(MAINCLKUEN,0x00000001);
     while((GET32(MAINCLKUEN)&0x00000001)==0) continue; //wait for it
 
-    PUT32(SYSAHBCLKDIV,0x00000001); //divide by 1
+    PUT32(SYSAHBCLKDIV,0x00000001); //divide by 1 gives us 48MHz
 
     //not using usb
     PUTGETSET(PDRUNCFG,(1<<10));
@@ -109,7 +122,7 @@ int clock_init ( void )
 void dowait ( void )
 {
     unsigned int ra;
-    ra=2;
+    ra=16;
 
     while(ra)
     {
@@ -131,7 +144,7 @@ void notmain ( void )
     PUT32(GPIO_DIR1,ra);
 
     PUT32(STCTRL,0x00000004); //disabled, no ints, use cpu clock
-    PUT32(STRELOAD,12000000-1);
+    PUT32(STRELOAD,12000000-1); //this is a 24 bit register not 32
     PUT32(STCTRL,0x00000005); //enabled, no ints, use cpu clock
 
     ra=GPIO_SET1;

@@ -1,0 +1,48 @@
+
+Look at the readme for blinker04 about bricking you board.  Not really
+bricked as there are multiple boot flash images in an NXP part.  It
+is just potentially painful to add a jumper to recover.  See the
+note below about a safety measure I added to save me some grief over
+this.
+
+Blinker05 is like blinker04 except that it uses the pll to multiply
+the external clock source by 4.  The external clock source is 12Mhz
+times four gives 48MHz.  This part is rated up to 50Mhz, maybe there
+is a way to set that with a 12MHz input, maybe not.  48MHz from 12 is
+very easy though, in fact described in the users manual.  Unlike other
+NXP and perhaps others note that the P divider is for the PLL and not
+our main clock source.  Our main clock is the external oscillator times
+M divided by SYSAHBCLKDIV.  P is used in the PLL to keep the PLL FCCO
+within limits.  FCCO is basically the external clock rate times 2 times
+P times M.  So for this case 12*2*2*4 = 192Mhz.  And that is a valid
+FCCO rate.
+
+So the arm is now running 48MHz.  Becareful with the systick divisor
+it is a 24 bit register, you cant just put 48 million - 1 and hope for
+a cycle every second.  (48,000,000-1) = 0x2DC6BFF.  Instead of getting
+a divide by 48000000 you would get a divide by 0xDC6BFF which is a
+divide by 14,445,567, almost three times faster than what you were
+expecting.  So this example divides by 12 Million, 1/4th of a second,
+then the dowait loop counts to 16 quarter seconds making it a 4 second
+wait.  The leds should change state every 4 seconds.  Something you can
+measure with a stopwatch to verify.  After you read the safety measure
+below, if you short PIN21 to ground, and reset then the leds should change
+state every 16 seconds because the internal 12MHz oscillator is being
+used not the pll derived 48MHz.
+
+
+
+I added a little safety measure.  If the clock init code sees
+PIN0.7 shorted to ground it will not continue configuring the clocks.
+PIN0.7 is PIN21 on the mbed LPC11U24 board, the opposite corner from
+ground.  If you want to mess with the clock init code and make a mistake
+then short PIN21 to ground and it will leave the internal 12MHz clock
+as the clock source allowing the mbed interface to recover/reprogram
+the microcontroller.  Press reset with PIN21 shorted and your program
+will run but possibly at the wrong clock rate.  Copy a different program
+and press reset and it will load that allowing you to remove the jumper
+and trying again.
+
+
+
+
