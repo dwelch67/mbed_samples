@@ -1,0 +1,44 @@
+
+This is the same as blinker03 except we want to use the 12MHz main
+oscillator instead of the onboard, boot up, 12MHz oscillator.
+
+This example was more painful that I would have liked.  I ended up
+bricking one board trying to recover it.  Basically if you mess up the
+clock on the target LPC11U24 such that on boot you kill the clock to the
+ARM then the mbed interface chip is not able to go in and reprogram the
+flash.  The LPC's I have used have more than one bootloader built in
+and the solution is to short port P0.1 on when you reset the
+microcontroller.  The solution is the same as one of the mbed.org pages
+but the LPC11U24 board IS NOT THE SAME AS THE LPC17xx based board.  At
+this time I dont know where else on the board to find that signal so I
+soldered a thin wire to pin 5 on the part and shorted that.  Power up
+the board with pin 5 of the microcontroller shorted, the microcontroller
+will boot from an alternate flash, one that doesnt turn the clocks off
+and the mbed interface can flash it.  Now if you have left the same
+binary on the mbed interface virtual usb flash that caused the
+microcontroller to stop, well you need to change that binary to something
+that works, and power cycle again.  Then disconnect pin 5 to ground
+and power cycle again or press reset and the microcontroller should
+come back to life.
+
+I had hoped to switch from the internal oscillator to the external
+oscillator and not use the PLL.  In theory you go through the pll
+clock select mux then use the pll input based on drawings in the
+users manual.  I played with the pll bypass register settings to see
+what would happen and that is when all the problems started.  For now
+do not change this line:
+
+    PUT32(SYSOSCCTRL,0x00000000); //DO NOT BYPASS PLL HERE
+
+If you change it to a 0x00000001 I expect you to run into the problems
+I had.
+
+Since the internal and external are the same frequency I will probably
+just use the internal for examples at that speed.  Usually external
+clock sources are more accurate, but I would rather know more about how
+to initialize the clock source before trying this again.  A future
+blinker example will use the external clock source and the pll to
+multiply the clock to a faster rate, whatever the maximum the chip
+is rated for (or the max we can get with this clock source, whichever
+is faster).
+
