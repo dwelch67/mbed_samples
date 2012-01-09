@@ -1,0 +1,15 @@
+
+derived from uart02. and blinker05 (see blinker05 and blinker04 about
+using something other than the internal clock).
+
+PCLK set to 48MHz.  Two uart init methods shown, the simplest is to
+divide the UART_PCLK by four, resulting in a 12Mhz clock which is what
+uart02 used.  No need to change the fractional divisors, etc.  The other
+method is to follow the flowchart in the users manual to come up with
+a fractional divisor, in this case 1.533333.... 1 + 8/15.  With a DLL
+of 17.
+
+The microcontroller uses the USART to communicate here, it is in this
+example configured to connec to the mbed interface which acts as a
+usb to serial adapter so you dont need a separate serial interface.
+Find the /dev/ttyACM# associated with the mbed.
