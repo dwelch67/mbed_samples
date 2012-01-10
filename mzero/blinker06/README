@@ -1,0 +1,32 @@
+
+Look at the readme for blinker04 about bricking you board.  Not really
+bricked as there are multiple boot flash images in an NXP part.  It
+is just potentially painful to add a jumper to recover.  See the
+note below about a safety measure I added to save me some grief over
+this.
+
+I added a little safety measure.  If the clock init code sees
+PIN0.7 shorted to ground it will not continue configuring the clocks.
+PIN0.7 is PIN21 on the mbed LPC11U24 board, the opposite corner from
+ground.  If you want to mess with the clock init code and make a mistake
+then short PIN21 to ground and it will leave the internal 12MHz clock
+as the clock source allowing the mbed interface to recover/reprogram
+the microcontroller.  Press reset with PIN21 shorted and your program
+will run but possibly at the wrong clock rate.  Copy a different program
+and press reset and it will load that allowing you to remove the jumper
+and trying again.
+
+
+
+blinker06.  This example sets the clock at 48MHz (see comments above)
+then uses the four non-cortex-m-systick timers in the part to drive
+the blink rate for the four user leds on the board.  Two of the
+counters are 16 bit and two are 32 bit.  The 32 bit counters are
+set with a 48 Million and 32 Million count prescaler, one second per
+timer count and a count a little faster for the other.  The 16 bit
+timers prescalers are, well, 16 bit so they cannot handle numbers like
+that so they are set for 48Million/1024 and 32million/1024.  The main
+loop looks for changes in the timer counts and changes the leds as
+a result.
+
+
