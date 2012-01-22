@@ -10,6 +10,8 @@ extern void ASMDELAY ( unsigned int );
 extern unsigned int PUTGETCLR ( unsigned int, unsigned int );
 extern unsigned int PUTGETSET ( unsigned int, unsigned int );
 
+extern void exit ( unsigned int );
+
 #define GPIO_BASE 0x50000000
 
 #define GPIO_W00 (GPIO_BASE+0x1000)
@@ -213,7 +215,7 @@ unsigned int uart_getc ( void )
     return(GET32(U0RBR));
 }
 //-------------------------------------------------------------------
-void hexstring ( unsigned int d, unsigned int cr )
+void hexstring ( unsigned int d )
 {
     //unsigned int ra;
     unsigned int rb;
@@ -228,15 +230,26 @@ void hexstring ( unsigned int d, unsigned int cr )
         uart_putc(rc);
         if(rb==0) break;
     }
-    if(cr)
+    uart_putc(0x0D);
+    uart_putc(0x0A);
+}
+//-------------------------------------------------------------------
+void hexstrings ( unsigned int d )
+{
+    //unsigned int ra;
+    unsigned int rb;
+    unsigned int rc;
+
+    rb=32;
+    while(1)
     {
-        uart_putc(0x0D);
-        uart_putc(0x0A);
+        rb-=4;
+        rc=(d>>rb)&0xF;
+        if(rc>9) rc+=0x37; else rc+=0x30;
+        uart_putc(rc);
+        if(rb==0) break;
     }
-    else
-    {
-        uart_putc(0x20);
-    }
+    uart_putc(0x20);
 }
 //-------------------------------------------------------------------
 void dowait ( void )
@@ -255,6 +268,12 @@ void dowait ( void )
 #define SET_PDI_CLK  PUT8(GPIO1_B18,1)
 #define CLR_PDI_CLK  PUT8(GPIO1_B18,0)
 #define DELX 10
+
+#define POINTER_xPTR   0x00
+#define POINTER_xPTRpp 0x04
+#define POINTER_PTR    0x08
+#define POINTER_PTRpp  0x0C
+
 //-------------------------------------------------------------------
 void send_pdi_command ( unsigned int x )
 {
@@ -282,6 +301,7 @@ void send_pdi_command ( unsigned int x )
         ra>>=1;
         ASMDELAY(DELX);
     }
+    //PDI_DIR_IN;
 }
 //-------------------------------------------------------------------
 void send_pdi_break ( unsigned int len )
@@ -316,18 +336,207 @@ void send_pdi_idle ( unsigned int len )
 
 }
 //-------------------------------------------------------------------
+unsigned int get_one_byte ( void )
+{
+    unsigned int ra,rb,rc,rd;
+
+    PDI_DIR_IN;
+    while(1)
+    {
+        CLR_PDI_CLK;
+        ASMDELAY(DELX);
+        SET_PDI_CLK;
+        ra=GET8(GPIO1_B17)&1;
+        ASMDELAY(DELX);
+        if(ra==0) break;
+    }
+    rc=0;
+    for(rb=0;rb<11;rb++)
+    {
+        CLR_PDI_CLK;
+        ASMDELAY(DELX);
+        SET_PDI_CLK;
+        ra=GET8(GPIO1_B17)&1;
+        ASMDELAY(DELX);
+        rc<<=1;
+        rc|=ra;
+    }
+    if((rc&0x803)!=0x003)
+    {
+        //framing error
+        hexstring(0xBADBAD00);
+        exit(1);
+    }
+    rc>>=2;
+    rd=rc&1;
+    rc>>=1;
+    rb=0;
+    for(ra=0;ra<8;ra++)
+    {
+        rb<<=1;
+        rb|=rc&1;
+        rd+=rc&1;
+        rc>>=1;
+    }
+    if(rd&1)
+    {
+        //parity error
+        hexstring(0xBADBAD01);
+        exit(1);
+    }
+    return(rb);
+}
+//-------------------------------------------------------------------
+void pdi_send_four_le ( unsigned int data )
+{
+    send_pdi_command(data&0xFF);
+    data>>=8;
+    send_pdi_command(data&0xFF);
+    data>>=8;
+    send_pdi_command(data&0xFF);
+    data>>=8;
+    send_pdi_command(data&0xFF);
+}
+//-------------------------------------------------------------------
+unsigned int pdi_get_four_le ( void )
+{
+    unsigned int ra;
+    unsigned int rb;
+
+    ra=get_one_byte();
+    rb=get_one_byte();
+    ra|=rb<<8;
+    rb=get_one_byte();
+    ra|=rb<<16;
+    rb=get_one_byte();
+    ra|=rb<<24;
+    return(ra);
+}
+//-------------------------------------------------------------------
+//-------------------------------------------------------------------
+unsigned int pdi_ldcs ( unsigned int reg )
+{
+    unsigned int ra;
+
+    send_pdi_command(0x80|reg);
+    ra=get_one_byte();
+    return(ra);
+}
+//-------------------------------------------------------------------
+unsigned int pdi_stcs ( unsigned int reg, unsigned int data )
+{
+    unsigned int ra;
+
+    send_pdi_command(0xC0|reg);
+    send_pdi_command(data&0xFF);
+    return(ra);
+}
+//-------------------------------------------------------------------
+//-------------------------------------------------------------------
+void pdi_st_one (  unsigned int pointer, unsigned int data )
+{
+    send_pdi_command(0x60|pointer);
+    send_pdi_command(data&0xFF);
+}
+//-------------------------------------------------------------------
+void pdi_st_two (  unsigned int pointer, unsigned int data )
+{
+    send_pdi_command(0x61|pointer);
+    send_pdi_command(data&0xFF);
+    data>>=8;
+    send_pdi_command(data&0xFF);
+}
+//-------------------------------------------------------------------
+void pdi_st_four (  unsigned int pointer, unsigned int data )
+{
+    send_pdi_command(0x63|pointer);
+    pdi_send_four_le(data);
+}
+//-------------------------------------------------------------------
+//-------------------------------------------------------------------
+unsigned int pdi_ld_one ( unsigned int pointer )
+{
+    unsigned int ra;
+
+    send_pdi_command(0x20|pointer);
+    ra=get_one_byte();
+    return(ra);
+}
+//-------------------------------------------------------------------
+unsigned int pdi_ld_two ( unsigned int pointer )
+{
+    unsigned int ra;
+    unsigned int rb;
+
+    send_pdi_command(0x21|pointer);
+    ra=get_one_byte();
+    rb=get_one_byte();
+    ra|=rb<<8;
+    return(ra);
+}
+//-------------------------------------------------------------------
+unsigned int pdi_ld_four ( unsigned int pointer )
+{
+    unsigned int ra;
+
+    send_pdi_command(0x23|pointer);
+    ra=pdi_get_four_le();
+    return(ra);
+}
+//-------------------------------------------------------------------
+//-------------------------------------------------------------------
+void pdi_sts_four_one (  unsigned int address, unsigned int data )
+{
+    send_pdi_command(0x4C);
+    pdi_send_four_le(address);
+    send_pdi_command(data&0xFF);
+}
+//-------------------------------------------------------------------
+void pdi_sts_four_four (  unsigned int address, unsigned int data )
+{
+    send_pdi_command(0x4F);
+    pdi_send_four_le(address);
+    pdi_send_four_le(data);
+}
+//-------------------------------------------------------------------
+unsigned int pdi_lds_four_one (  unsigned int address )
+{
+    unsigned int ra;
+
+    send_pdi_command(0x0C);
+    pdi_send_four_le(address);
+    ra=get_one_byte();
+    return(ra);
+}
+//-------------------------------------------------------------------
+unsigned int pdi_lds_four_four (  unsigned int address )
+{
+    unsigned int ra;
+
+    send_pdi_command(0x0F);
+    pdi_send_four_le(address);
+    ra=pdi_get_four_le();
+    return(ra);
+}
+//-------------------------------------------------------------------
+//-------------------------------------------------------------------
 void notmain ( void )
 {
     unsigned int ra;
     unsigned int rb;
     unsigned int rc;
+    unsigned int rd;
+    unsigned int re;
+    unsigned int rf;
 
 
 
     clock_init();
     uart_init();
     //uart_init_48_to_12();
-    hexstring(0x12345678,1);
+    hexstring(0x12345678);
+
+    ASMDELAY(500000);
 
     ra=GET32(GPIO_DIR1);
     ra|=1<<8;
@@ -354,69 +563,272 @@ void notmain ( void )
 
     PDI_DIR_OUT;
     SET_PDI_CLK;
-   // CLR_PDI_DATA;
-    //ASMDELAY(2000);
     SET_PDI_DATA;
-    ASMDELAY(500000);
+    ASMDELAY(5000);
     send_pdi_idle(200);
-
-
     send_pdi_break(24);
     send_pdi_idle(24);
 
-    //set address
-    //send_pdi_command(0x6B);
-    //send_pdi_command(0x00);
-    //send_pdi_command(0x00);
-    //send_pdi_command(0x20);
-    //send_pdi_command(0x00);
+    //put it in reset so we can talk to it
+    send_pdi_command(0xC1);
+    send_pdi_command(0x59);
 
-    //send_pdi_command(0x65);
-    //send_pdi_command(0x12);
-    //send_pdi_command(0x34);
-
-    //send_pdi_command(0x6B);
-    //send_pdi_command(0x00);
-    //send_pdi_command(0x00);
-    //send_pdi_command(0x20);
-    //send_pdi_command(0x00);
-
-    //send_pdi_command(0x25);
-
-    send_pdi_command(0x6B);
-    send_pdi_command(0x12);
-    send_pdi_command(0x34);
-    send_pdi_command(0x56);
-    send_pdi_command(0x78);
-    send_pdi_command(0x2B);
-
-  //  send_pdi_idle(12);
-
-    PDI_DIR_IN;
-    while(1)
+    ra=pdi_ldcs(0x01);
+if(0)
+{
+    hexstring(ra);
+    exit(1);
+}
+    if(ra!=1)
     {
-        CLR_PDI_CLK;
-        ASMDELAY(DELX);
-        SET_PDI_CLK;
-        ra=GET8(GPIO1_B17)&1;
-        ASMDELAY(DELX);
-        if(ra==0) break;
+        hexstring(0xBADBAD00);
+        exit(1);
     }
-    rc=0;
-    for(rb=0;rb<30;rb++)
+    pdi_stcs(0x02,0x04);
+
+
+
+    //read id and rev
+    pdi_st_four(POINTER_PTR,0x01000090);
+    ra=pdi_ld_four(POINTER_xPTR);
+if(0)
+{
+    hexstring(ra);
+    exit(1);
+}
+    if((ra&0x00FFFFFF)!=0x004C971E)
     {
-        CLR_PDI_CLK;
-        ASMDELAY(DELX);
-        SET_PDI_CLK;
-        ra=GET8(GPIO1_B17)&1;
-        ASMDELAY(DELX);
-        rc<<=1;
-        rc|=ra;
+        hexstring(0xBADBAD10);
+        exit(1);
     }
-    hexstring(rc,1);
 
 
 
 
+    //unlock nvm
+    ra=pdi_ldcs(0x00);
+if(0)
+{
+    hexstring(ra);
+    exit(1);
+}
+    if((ra&2)==0)
+    {
+        send_pdi_command(0xE0);
+        send_pdi_command(0xFF);
+        send_pdi_command(0x88);
+        send_pdi_command(0xD8);
+        send_pdi_command(0xCD);
+        send_pdi_command(0x45);
+        send_pdi_command(0xAB);
+        send_pdi_command(0x89);
+        send_pdi_command(0x12);
+        for(rb=0;rb<100;rb++)
+        {
+            ra=pdi_ldcs(0x00);
+            if((ra&2)==2) break;
+        }
+        if(rb>=100)
+        {
+            hexstring(0xBADBAD00);
+            exit(1);
+        }
+    }
+    //NVM Unlocked
 
+    pdi_sts_four_one(0x010001CA,0x40);
+    pdi_sts_four_one(0x010001CB,0x01);
+    for(ra=0;;ra++)
+    {
+        rb=pdi_ldcs(0x00);
+        if(rb&2) break;
+    }
+if(0)
+{
+    hexstring(ra);
+    hexstring(rb);
+    exit(1);
+}
+
+
+    pdi_sts_four_one(0x010001CA,0x40);
+
+    pdi_sts_four_one(0x00800000,0x00);
+    ra=pdi_lds_four_one(0x010001CF);
+    ra=pdi_lds_four_one(0x010001CF);
+if(0)
+{
+    hexstring(ra);
+    hexstring(rb);
+    exit(1);
+}
+
+
+{
+    unsigned char pre_data[0x20];
+    unsigned char some_data[0x20];
+
+
+    pdi_sts_four_one(0x010001CA,0x43);
+    for(ra=0;ra<0x20;ra++)
+    {
+        pre_data[ra]=pdi_lds_four_one(0x00800000+ra);
+    }
+
+
+
+
+    //load flash page buffer
+    pdi_sts_four_one(0x010001CA,0x23);
+    for(ra=0;ra<0x100;ra++)
+    {
+        pdi_sts_four_one(0x00800000+ra,ra);
+    }
+    ra=pdi_lds_four_one(0x010001CF);
+    rb=pdi_lds_four_one(0x010001CF);
+if(0)
+{
+    hexstring(ra);
+    hexstring(rb);
+    exit(1);
+}
+
+
+    pdi_sts_four_one(0x010001CA,0x24);
+    pdi_sts_four_one(0x00800000,0x00);
+    for(ra=0;;ra++)
+    {
+        rb=pdi_lds_four_one(0x010001CF);
+        if(rb==0) break;
+    }
+if(0)
+{
+    hexstring(ra);
+    hexstring(rb);
+    exit(1);
+}
+
+
+
+    pdi_sts_four_one(0x010001CA,0x43);
+    for(ra=0;ra<0x20;ra++)
+    {
+        some_data[ra]=pdi_lds_four_one(0x00800000+ra);
+    }
+    for(ra=0;ra<0x20;ra++)
+    {
+        hexstrings(ra); hexstrings(some_data[ra]); hexstring(pre_data[ra]);
+    }
+
+
+}
+
+
+
+
+   ////load flash page buffer
+   //pdi_sts_four_one(0x010001CA,0x23);
+   //pdi_st_four(POINTER_PTR,0x00800000);
+   //send_pdi_command(0xA3);
+   //pdi_send_four_le(0x00010000);
+   //send_pdi_command(0x64);
+   //for(ra=0;ra<0x100;ra++)
+   //{
+   ////    pdi_st_one(POINTER_xPTRpp,ra);
+    //send_pdi_command(ra);
+   //}
+
+//        pdi_sts_four_one(0x010001CA,0x23);
+//    for(ra=0;ra<0x100;ra++)
+//    {
+//        pdi_sts_four_one(0x00800000+ra,ra);
+//    }
+//
+//
+//
+//
+//   pdi_sts_four_one(0x010001CA,0x24);
+//   pdi_sts_four_one(0x010001CB,0x01);
+//
+//    ra=pdi_ldcs(0x00);
+//    rb=pdi_ldcs(0x00);
+//    rc=pdi_ldcs(0x00);
+//    rd=pdi_ldcs(0x00);
+//
+//if(1)
+//{
+//    hexstring(ra);
+//    hexstring(rb);
+//    hexstring(rc);
+//    hexstring(rd);
+//    exit(1);
+//}
+//
+//
+   //for(rb=0;;rb++)
+   //{
+       //ra=pdi_lds_four_one(0x010001CF);
+       //if(ra==0) break;
+       //rc=ra;
+   //}
+   //hexstring(rb);
+   //hexstring(rc);
+
+
+//0x24
+//
+//
+//
+//    pdi_sts_four_one(0x010001CA,0x43);
+//
+//    //memory "boot"
+//        //size      = 0x00002000;
+//        //offset        = 0x00820000;
+//        //page_size = 0x100;
+//        //readsize  = 0x100;
+//    //;
+//
+//
+//    //memory "application"
+//        //size      = 0x00020000;
+//        //offset        = 0x0800000;
+//        //page_size = 0x100;
+//        //readsize  = 0x100;
+//    //;
+//
+//
+//    pdi_sts_four_one(0x010001C0,0x00);
+//    pdi_sts_four_one(0x010001C1,0x00);
+//    pdi_sts_four_one(0x010001C2,0x80);
+//
+//{
+//    unsigned char some_data[0x20];
+//for(ra=0;ra<0x20;ra++)
+//{
+//    pdi_sts_four_one(0x010001C0,ra);
+//    some_data[ra]=pdi_lds_four_one(0x010001C4);
+//}
+//for(ra=0;ra<0x20;ra++)
+//{
+//    hexstrings(ra); hexstring(some_data[ra]);
+//}
+//
+//}
+
+
+//The Erase & Write Application Section Page, Erase & Write Boot Loader Section
+//Page, and Erase & Write EEPROM Page is used to erase one page and then write a
+//loaded Flash/EEPROM page buffer into that page in the selected memory space, in
+//one atomic operation.
+//1. Load the NVM CMD register with Erase & Write Application Section/Boot Loader
+//Section/User Signature Row/EEPROM Page command.
+//2. Write the selected page by doing a PDI Write. The page is written by addressing
+//any byte location within the page.
+//The BUSY flag in the NVM STATUS register will be set until the operation is finished.
+
+
+
+
+    hexstring(0xAABBCCDD);
+    hexstring(0x12345678);
 }
