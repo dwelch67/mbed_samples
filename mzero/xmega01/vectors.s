@@ -27,6 +27,7 @@
 .word   hang        /* 18 External Interrupt(2) */
 .word   hang        /* 19 ...   */
 
+
 .thumb_func
 hang:   b .
 
@@ -35,6 +36,11 @@ hang:   b .
 _start:
     bl notmain
     b hang
+
+.thumb_func
+.globl exit
+exit:
+    b exit
 
 
 .thumb_func
@@ -85,6 +91,8 @@ PUTGETSET:
     str r2,[r0]
     mov r0,r2
     bx lr
+
+
 
 .thumb_func
 .globl dummy
