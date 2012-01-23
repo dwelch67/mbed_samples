@@ -90,19 +90,7 @@ int clock_init ( void )
 
     if(1)
     {
-        //A little safety measure.  At the time of this writing it is
-        //easy to hang the ARM if you make a mistake configuring the
-        //clocks such that the mbed interface chip cannot re-program it
-        //(for example to remove the code in flash you used to hang it)
-        //One solution is to put a jumper to ground on pin 5 of the
-        //microcontroller, causing the microcontroller to boot in ISP
-        //mode, basically from a different program in flash which does
-        //not hang the arm.  This pin is hard to get to on the mbed but
-        //GPIO 0.7 is easy to get to.  If there is a jumper between the
-        //two corners, ground and PIN21 then this function will abort
-        //and not configure the clock.  This gives you a little more
-        //freedom to mess with the clock init code and not have the
-        //recovery as painful.
+        // A little safety measure.
 
         //if GPIO 0.7 is shorted to ground, then bypass clock config
         PUTGETSET(SYSAHBCLKCTRL,(1<<16)); //need this for I/O in general
@@ -189,7 +177,7 @@ void uart_init ( void )
     PUT32(PIO0_18,0x00000001); //use alternate function RXD for p0.18
     PUT32(PIO0_19,0x00000001); //use alternate function TXD for p0.19
     PUT32(UARTCLKDIV,1);
-//48000000 Hz PCLK 115200 baud
+//48200000 Hz PCLK 115200 baud
 //dl 0x11 mul 0x0F div 0x08 baud 115089 diff 89
     PUT32(U0ACR,0x00); //no autobaud
     PUT32(U0LCR,0x83); //dlab=1; N81
@@ -260,7 +248,8 @@ void dowait ( void )
     uart_putc(ra);
     if(ra==0x0D) uart_putc(0x0A);
 }
-    unsigned int pdi_data_in,pdi_data_out;
+
+unsigned int pdi_data_in,pdi_data_out;
 #define PDI_DIR_OUT PUT32(GPIO_DIR1,pdi_data_out)
 #define PDI_DIR_IN  PUT32(GPIO_DIR1,pdi_data_in)
 #define SET_PDI_DATA PUT8(GPIO1_B17,1)
@@ -273,6 +262,37 @@ void dowait ( void )
 #define POINTER_xPTRpp 0x04
 #define POINTER_PTR    0x08
 #define POINTER_PTRpp  0x0C
+
+#define PORTF_DIRSET 0x010006A1
+#define PORTF_OUTSET 0x010006A5
+#define PORTF_OUTCLR 0x010006A6
+
+
+const unsigned short rom[0x16]=
+{
+ 0xC000, //00000000
+ 0xEF0F, //00000001
+ 0xEF5F, //00000002
+ 0x9300, //00000003
+ 0x06A1, //00000004
+ 0xE020, //00000005
+ 0xE010, //00000006
+ 0xE240, //00000007
+ 0xEE38, //00000008
+ 0x9513, //00000009
+ 0x3010, //0000000A
+ 0xF7E9, //0000000B
+ 0x9523, //0000000C
+ 0x3020, //0000000D
+ 0xF7D1, //0000000E
+ 0x9533, //0000000F
+ 0x3030, //00000010
+ 0xF7B9, //00000011
+ 0x2705, //00000012
+ 0x9300, //00000013
+ 0x06A4, //00000014
+ 0xCFF2, //00000015
+};
 
 //-------------------------------------------------------------------
 void send_pdi_command ( unsigned int x )
@@ -651,19 +671,8 @@ if(0)
 }
 
 
-    pdi_sts_four_one(0x010001CA,0x40);
 
-    pdi_sts_four_one(0x00800000,0x00);
-    ra=pdi_lds_four_one(0x010001CF);
-    ra=pdi_lds_four_one(0x010001CF);
-if(0)
-{
-    hexstring(ra);
-    hexstring(rb);
-    exit(1);
-}
-
-
+if(1)
 {
     unsigned char pre_data[0x20];
     unsigned char some_data[0x20];
@@ -672,17 +681,25 @@ if(0)
     pdi_sts_four_one(0x010001CA,0x43);
     for(ra=0;ra<0x20;ra++)
     {
-        pre_data[ra]=pdi_lds_four_one(0x00800000+ra);
+        pre_data[ra]=pdi_lds_four_one(0x00820000+ra);
     }
 
-
+if(0)
+{
+    for(ra=0;ra<0x20;ra++)
+    {
+        hexstrings(ra); hexstring(pre_data[ra]);
+    }
+    exit(1);
+}
 
 
     //load flash page buffer
     pdi_sts_four_one(0x010001CA,0x23);
-    for(ra=0;ra<0x100;ra++)
+    for(ra=0;ra<0x100;ra+=2)
     {
-        pdi_sts_four_one(0x00800000+ra,ra);
+        pdi_sts_four_one(0x00820000+ra+0,(rom[ra>>1]>>0)&0xFF);
+        pdi_sts_four_one(0x00820000+ra+1,(rom[ra>>1]>>8)&0xFF);
     }
     ra=pdi_lds_four_one(0x010001CF);
     rb=pdi_lds_four_one(0x010001CF);
@@ -694,8 +711,8 @@ if(0)
 }
 
 
-    pdi_sts_four_one(0x010001CA,0x24);
-    pdi_sts_four_one(0x00800000,0x00);
+    pdi_sts_four_one(0x010001CA,0x2C);
+    pdi_sts_four_one(0x00820000,0x00);
     for(ra=0;;ra++)
     {
         rb=pdi_lds_four_one(0x010001CF);
@@ -709,12 +726,19 @@ if(0)
 }
 
 
-
     pdi_sts_four_one(0x010001CA,0x43);
     for(ra=0;ra<0x20;ra++)
     {
-        some_data[ra]=pdi_lds_four_one(0x00800000+ra);
+        some_data[ra]=pdi_lds_four_one(0x00820000+ra);
     }
+
+
+
+    send_pdi_command(0xC1);
+    send_pdi_command(0x00);
+
+
+
     for(ra=0;ra<0x20;ra++)
     {
         hexstrings(ra); hexstrings(some_data[ra]); hexstring(pre_data[ra]);
@@ -723,108 +747,16 @@ if(0)
 
 }
 
+    //pdi_sts_four_one(0x010001CA,0x43);
 
+    //ra=pdi_lds_four_one(0x008F0020);
+    //rb=pdi_lds_four_one(0x008F0021);
+    //rc=pdi_lds_four_one(0x008F0022);
 
+    //hexstring(ra);
+    //hexstring(rb);
+    //hexstring(rc);
 
-   ////load flash page buffer
-   //pdi_sts_four_one(0x010001CA,0x23);
-   //pdi_st_four(POINTER_PTR,0x00800000);
-   //send_pdi_command(0xA3);
-   //pdi_send_four_le(0x00010000);
-   //send_pdi_command(0x64);
-   //for(ra=0;ra<0x100;ra++)
-   //{
-   ////    pdi_st_one(POINTER_xPTRpp,ra);
-    //send_pdi_command(ra);
-   //}
-
-//        pdi_sts_four_one(0x010001CA,0x23);
-//    for(ra=0;ra<0x100;ra++)
-//    {
-//        pdi_sts_four_one(0x00800000+ra,ra);
-//    }
-//
-//
-//
-//
-//   pdi_sts_four_one(0x010001CA,0x24);
-//   pdi_sts_four_one(0x010001CB,0x01);
-//
-//    ra=pdi_ldcs(0x00);
-//    rb=pdi_ldcs(0x00);
-//    rc=pdi_ldcs(0x00);
-//    rd=pdi_ldcs(0x00);
-//
-//if(1)
-//{
-//    hexstring(ra);
-//    hexstring(rb);
-//    hexstring(rc);
-//    hexstring(rd);
-//    exit(1);
-//}
-//
-//
-   //for(rb=0;;rb++)
-   //{
-       //ra=pdi_lds_four_one(0x010001CF);
-       //if(ra==0) break;
-       //rc=ra;
-   //}
-   //hexstring(rb);
-   //hexstring(rc);
-
-
-//0x24
-//
-//
-//
-//    pdi_sts_four_one(0x010001CA,0x43);
-//
-//    //memory "boot"
-//        //size      = 0x00002000;
-//        //offset        = 0x00820000;
-//        //page_size = 0x100;
-//        //readsize  = 0x100;
-//    //;
-//
-//
-//    //memory "application"
-//        //size      = 0x00020000;
-//        //offset        = 0x0800000;
-//        //page_size = 0x100;
-//        //readsize  = 0x100;
-//    //;
-//
-//
-//    pdi_sts_four_one(0x010001C0,0x00);
-//    pdi_sts_four_one(0x010001C1,0x00);
-//    pdi_sts_four_one(0x010001C2,0x80);
-//
-//{
-//    unsigned char some_data[0x20];
-//for(ra=0;ra<0x20;ra++)
-//{
-//    pdi_sts_four_one(0x010001C0,ra);
-//    some_data[ra]=pdi_lds_four_one(0x010001C4);
-//}
-//for(ra=0;ra<0x20;ra++)
-//{
-//    hexstrings(ra); hexstring(some_data[ra]);
-//}
-//
-//}
-
-
-//The Erase & Write Application Section Page, Erase & Write Boot Loader Section
-//Page, and Erase & Write EEPROM Page is used to erase one page and then write a
-//loaded Flash/EEPROM page buffer into that page in the selected memory space, in
-//one atomic operation.
-//1. Load the NVM CMD register with Erase & Write Application Section/Boot Loader
-//Section/User Signature Row/EEPROM Page command.
-//2. Write the selected page by doing a PDI Write. The page is written by addressing
-//any byte location within the page.
-//The BUSY flag in the NVM STATUS register will be set until the operation is finished.
 
 
 
