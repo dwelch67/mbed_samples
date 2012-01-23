@@ -10,7 +10,7 @@ unsigned char mem[0x10000];
 #define ROMMASK 0x00FFFF
 unsigned short rom[ROMMASK+1];
 
-
+FILE *fpout;
 
 unsigned char gstring[80];
 unsigned char newline[1024];
@@ -118,7 +118,7 @@ unsigned char t;
                     gstring[4]=0;
 
                     rom[add>>1]=(unsigned short)strtoul(gstring,NULL,16);
-                    printf(" 0x%04X, //%08X\n",rom[add>>1],add>>1);
+                    fprintf(fpout," 0x%04X, //%08X\n",rom[add>>1],add>>1);
                     add+=2;
                 }
                 break;
@@ -177,7 +177,13 @@ int main ( int argc, char *argv[] )
         printf("error opening file [%s]\n",argv[1]);
         return(1);
     }
+    fpout=fopen("blinker.h","wt");
+    if(fpout==NULL) return(1);
+    fprintf(fpout,"\nconst unsigned short rom[0x80]=\n{\n");
     if(readhex(fp)) return(1);
+    fprintf(fpout,"};\n\n");
+    fclose(fpout);
+   
 
 
     return(0);
