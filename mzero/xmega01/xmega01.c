@@ -733,27 +733,6 @@ if(0)
 
 }
 
-    //pdi_sts_four_one(0x010001CA,0x43);
-
-    //ra=pdi_lds_four_one(0x008F0020);
-    //rb=pdi_lds_four_one(0x008F0021);
-    //rc=pdi_lds_four_one(0x008F0022);
-
-    //hexstring(ra);
-    //hexstring(rb);
-    //hexstring(rc);
-
-    PDI_DIR_OUT;
-    SET_PDI_DATA;
-    ASMDELAY(5000);
-    CLR_PDI_DATA;
-    ASMDELAY(5000);
-    PDI_DIR_IN;
-
-
-
-
-
     hexstring(0xAABBCCDD);
     hexstring(0x12345678);
 }
