@@ -5,33 +5,33 @@
 RESET:
 
 
-
-;;//void setClockTo32MHz() {
-;;    //CCP = CCP_IOREG_gc;              // disable register security for oscillator update
-;;    //OSC.CTRL = OSC_RC32MEN_bm;       // enable 32MHz oscillator
-;;    //while(!(OSC.STATUS & OSC_RC32MRDY_bm)); // wait for oscillator to be ready
-;;    //CCP = CCP_IOREG_gc;              // disable register security for clock update
-;;    //CLK.CTRL = CLK_SCLKSEL_RC32M_gc; // switch to 32MHz clock
-;;//}
-
-
-
-
-
-    ldi r18,0xD8
     ldi r19,0x02
-    sts 0x34,r18
-    sts 0x050,r19
+    ldi r30,0x50
+    ldi r31,0x00
+    st z+,r19       ;; enable 32MHz internal oscillator
 osc_wait:
-    lds r18,0x051
-    sbrs r18,2
-    rjmp osc_wait
+    ld r18,z
+    andi r18,0x2
+    breq osc_wait   ;; wait for it to be stable
     ldi r18,0xD8
     ldi r19,0x01
-    sts 0x34,r18
-    sts 0x040,r19
+
+    ldi r28,0x34
+    ldi r29,0x00
+
+    ldi r30,0x40
+    ldi r31,0x00
+
+    st y,r18        ;; ccp I/O protection
+    st z,r19        ;; change clock source
+    nop
+    nop
+    nop
 
 
+
+
+over:
 
     ldi R16,0xFF
     ldi R21,0xFF

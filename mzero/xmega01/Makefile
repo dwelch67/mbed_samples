@@ -69,5 +69,6 @@ clean:
 	rm -f *.opt.s
 	rm -f *.norm.s
 	rm -f blinker01.s.*
+	rm -f dumphex
 
 
