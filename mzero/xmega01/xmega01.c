@@ -267,32 +267,7 @@ unsigned int pdi_data_in,pdi_data_out;
 #define PORTF_OUTSET 0x010006A5
 #define PORTF_OUTCLR 0x010006A6
 
-
-const unsigned short rom[0x16]=
-{
- 0xC000, //00000000
- 0xEF0F, //00000001
- 0xEF5F, //00000002
- 0x9300, //00000003
- 0x06A1, //00000004
- 0xE020, //00000005
- 0xE010, //00000006
- 0xE240, //00000007
- 0xEE38, //00000008
- 0x9513, //00000009
- 0x3010, //0000000A
- 0xF7E9, //0000000B
- 0x9523, //0000000C
- 0x3020, //0000000D
- 0xF7D1, //0000000E
- 0x9533, //0000000F
- 0x3030, //00000010
- 0xF7B9, //00000011
- 0x2705, //00000012
- 0x9300, //00000013
- 0x06A4, //00000014
- 0xCFF2, //00000015
-};
+#include "blinker.h"
 
 //-------------------------------------------------------------------
 void send_pdi_command ( unsigned int x )
@@ -738,6 +713,17 @@ if(0)
     send_pdi_command(0x00);
 
 
+    pdi_sts_four_one(0x010001CA,0x43);
+
+    ra=pdi_lds_four_one(0x008F0020);
+    rb=pdi_lds_four_one(0x008F0021);
+    rc=pdi_lds_four_one(0x008F0022);
+
+    hexstring(ra);
+    hexstring(rb);
+    hexstring(rc);
+
+
 
     for(ra=0;ra<0x20;ra++)
     {
@@ -756,6 +742,13 @@ if(0)
     //hexstring(ra);
     //hexstring(rb);
     //hexstring(rc);
+
+    PDI_DIR_OUT;
+    SET_PDI_DATA;
+    ASMDELAY(5000);
+    CLR_PDI_DATA;
+    ASMDELAY(5000);
+    PDI_DIR_IN;
 
 
 
