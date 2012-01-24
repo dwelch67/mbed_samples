@@ -29,14 +29,14 @@ osc_wait:
     nop
 
 
-//USART initialization should use the following sequence:
-//1. Set the TxD pin value high, and optionally the XCK pin low.
-//2. Set the TxD and optionally the XCK pin as output.
-//3. Set the baud rate and frame format.
-//4. Set mode of operation (enables the XCK pin output in synchronous mode).
-//5. Enable the Transmitter or the Receiver depending on the usage.
-//For interrupt driven USART operation, global interrupts should be disabled during the
-//initialization
+;;USART initialization should use the following sequence:
+;;1. Set the TxD pin value high, and optionally the XCK pin low.
+;;2. Set the TxD and optionally the XCK pin as output.
+;;3. Set the baud rate and frame format.
+;;4. Set mode of operation (enables the XCK pin output in synchronous mode).
+;;5. Enable the Transmitter or the Receiver depending on the usage.
+;;For interrupt driven USART operation, global interrupts should be disabled during the
+;;initialization
 
 
 over:

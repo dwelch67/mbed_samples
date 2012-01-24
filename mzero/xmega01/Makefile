@@ -52,13 +52,17 @@ xmega01.clang.thumb.opt.bin : memmap vectors.o xmega01.clang.bc
 dumphex : dumphex.c
 	gcc -o dumphex dumphex.c
 
-blinker.h : blinker01.s.hex dumphex
-	./dumphex blinker01.s.hex
+blinker.h : blinker02.s.hex dumphex
+	./dumphex blinker02.s.hex
 
 
 blinker01.s.hex : blinker01.s
 	avra -fI blinker01.s
 
+
+
+blinker02.s.hex : blinker02.s
+	avra -fI blinker02.s
 
 clean:
 	rm -f *.bin
@@ -69,6 +73,7 @@ clean:
 	rm -f *.opt.s
 	rm -f *.norm.s
 	rm -f blinker01.s.*
+	rm -f blinker02.s.*
 	rm -f dumphex
 
 

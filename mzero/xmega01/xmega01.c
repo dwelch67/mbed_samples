@@ -418,13 +418,10 @@ unsigned int pdi_ldcs ( unsigned int reg )
     return(ra);
 }
 //-------------------------------------------------------------------
-unsigned int pdi_stcs ( unsigned int reg, unsigned int data )
+void pdi_stcs ( unsigned int reg, unsigned int data )
 {
-    unsigned int ra;
-
     send_pdi_command(0xC0|reg);
     send_pdi_command(data&0xFF);
-    return(ra);
 }
 //-------------------------------------------------------------------
 //-------------------------------------------------------------------
@@ -524,6 +521,12 @@ void notmain ( void )
     unsigned int re;
     unsigned int rf;
 
+    ra=0;
+    rb=0;
+    rc=0;
+    rd=0;
+    re=0;
+    rf=0;
 
 
     clock_init();
