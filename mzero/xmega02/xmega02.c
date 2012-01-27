@@ -1,4 +1,6 @@
 
+#include "blinker.h"
+
 #include "parity.h"
 
 extern void PUT8 ( unsigned int, unsigned int );
@@ -10,7 +12,7 @@ extern void ASMDELAY ( unsigned int );
 extern unsigned int PUTGETCLR ( unsigned int, unsigned int );
 extern unsigned int PUTGETSET ( unsigned int, unsigned int );
 
-extern void exit ( unsigned int );
+extern void doexit ( unsigned int );
 
 #define GPIO_BASE 0x50000000
 
@@ -240,35 +242,17 @@ void hexstrings ( unsigned int d )
     uart_putc(0x20);
 }
 //-------------------------------------------------------------------
-void dowait ( void )
-{
-    unsigned int ra;
-
-    ra=uart_getc();
-    uart_putc(ra);
-    if(ra==0x0D) uart_putc(0x0A);
-}
-
-unsigned int pdi_data_in,pdi_data_out;
-#define PDI_DIR_OUT PUT32(GPIO_DIR1,pdi_data_out)
-#define PDI_DIR_IN  PUT32(GPIO_DIR1,pdi_data_in)
+//-------------------------------------------------------------------
+#define PDI_DIR_OUT PUTGETSET(GPIO_DIR1,1<<17)
+#define PDI_DIR_IN  PUTGETCLR(GPIO_DIR1,1<<17)
 #define SET_PDI_DATA PUT8(GPIO1_B17,1)
 #define CLR_PDI_DATA PUT8(GPIO1_B17,0)
 #define SET_PDI_CLK  PUT8(GPIO1_B18,1)
 #define CLR_PDI_CLK  PUT8(GPIO1_B18,0)
 #define DELX 10
 
-#define POINTER_xPTR   0x00
-#define POINTER_xPTRpp 0x04
-#define POINTER_PTR    0x08
-#define POINTER_PTRpp  0x0C
 
-#define PORTF_DIRSET 0x010006A1
-#define PORTF_OUTSET 0x010006A5
-#define PORTF_OUTCLR 0x010006A6
-
-#include "blinker.h"
-
+//-------------------------------------------------------------------
 //-------------------------------------------------------------------
 void send_pdi_command ( unsigned int x )
 {
@@ -296,7 +280,6 @@ void send_pdi_command ( unsigned int x )
         ra>>=1;
         ASMDELAY(DELX);
     }
-    //PDI_DIR_IN;
 }
 //-------------------------------------------------------------------
 void send_pdi_break ( unsigned int len )
@@ -360,7 +343,7 @@ unsigned int get_one_byte ( void )
     {
         //framing error
         hexstring(0xBADBAD00);
-        exit(1);
+        doexit(1);
     }
     rc>>=2;
     rd=rc&1;
@@ -377,7 +360,7 @@ unsigned int get_one_byte ( void )
     {
         //parity error
         hexstring(0xBADBAD01);
-        exit(1);
+        doexit(1);
     }
     return(rb);
 }
@@ -408,7 +391,6 @@ unsigned int pdi_get_four_le ( void )
     return(ra);
 }
 //-------------------------------------------------------------------
-//-------------------------------------------------------------------
 unsigned int pdi_ldcs ( unsigned int reg )
 {
     unsigned int ra;
@@ -423,75 +405,102 @@ void pdi_stcs ( unsigned int reg, unsigned int data )
     send_pdi_command(0xC0|reg);
     send_pdi_command(data&0xFF);
 }
+//////-------------------------------------------------------------------
+//////-------------------------------------------------------------------
+////void pdi_st_one (  unsigned int pointer, unsigned int data )
+////{
+////    send_pdi_command(0x60|pointer);
+////    send_pdi_command(data&0xFF);
+////}
+//////-------------------------------------------------------------------
+////void pdi_st_two (  unsigned int pointer, unsigned int data )
+////{
+////    send_pdi_command(0x61|pointer);
+////    send_pdi_command(data&0xFF);
+////    data>>=8;
+////    send_pdi_command(data&0xFF);
+////}
+//////-------------------------------------------------------------------
+////void pdi_st_four (  unsigned int pointer, unsigned int data )
+////{
+////    send_pdi_command(0x63|pointer);
+////    pdi_send_four_le(data);
+////}
+//////-------------------------------------------------------------------
+//////-------------------------------------------------------------------
+////unsigned int pdi_ld_one ( unsigned int pointer )
+////{
+////    unsigned int ra;
+////
+////    send_pdi_command(0x20|pointer);
+////    ra=get_one_byte();
+////    return(ra);
+////}
+//////-------------------------------------------------------------------
+////unsigned int pdi_ld_two ( unsigned int pointer )
+////{
+////    unsigned int ra;
+////    unsigned int rb;
+////
+////    send_pdi_command(0x21|pointer);
+////    ra=get_one_byte();
+////    rb=get_one_byte();
+////    ra|=rb<<8;
+////    return(ra);
+////}
+//////-------------------------------------------------------------------
+////unsigned int pdi_ld_four ( unsigned int pointer )
+////{
+////    unsigned int ra;
+////
+////    send_pdi_command(0x23|pointer);
+////    ra=pdi_get_four_le();
+////    return(ra);
+////}
+//////-------------------------------------------------------------------
+//////-------------------------------------------------------------------
+////void pdi_sts_four_one (  unsigned int address, unsigned int data )
+////{
+////    send_pdi_command(0x4C);
+////    pdi_send_four_le(address);
+////    send_pdi_command(data&0xFF);
+////}
+//////-------------------------------------------------------------------
+////void pdi_sts_four_four (  unsigned int address, unsigned int data )
+////{
+////    send_pdi_command(0x4F);
+////    pdi_send_four_le(address);
+////    pdi_send_four_le(data);
+////}
+//////-------------------------------------------------------------------
+////unsigned int pdi_lds_four_one (  unsigned int address )
+////{
+////    unsigned int ra;
+////
+////    send_pdi_command(0x0C);
+////    pdi_send_four_le(address);
+////    ra=get_one_byte();
+////    return(ra);
+////}
+//////-------------------------------------------------------------------
+////unsigned int pdi_lds_four_four (  unsigned int address )
+////{
+////    unsigned int ra;
+////
+////    send_pdi_command(0x0F);
+////    pdi_send_four_le(address);
+////    ra=pdi_get_four_le();
+////    return(ra);
+////}
 //-------------------------------------------------------------------
-//-------------------------------------------------------------------
-void pdi_st_one (  unsigned int pointer, unsigned int data )
-{
-    send_pdi_command(0x60|pointer);
-    send_pdi_command(data&0xFF);
-}
-//-------------------------------------------------------------------
-void pdi_st_two (  unsigned int pointer, unsigned int data )
-{
-    send_pdi_command(0x61|pointer);
-    send_pdi_command(data&0xFF);
-    data>>=8;
-    send_pdi_command(data&0xFF);
-}
-//-------------------------------------------------------------------
-void pdi_st_four (  unsigned int pointer, unsigned int data )
-{
-    send_pdi_command(0x63|pointer);
-    pdi_send_four_le(data);
-}
-//-------------------------------------------------------------------
-//-------------------------------------------------------------------
-unsigned int pdi_ld_one ( unsigned int pointer )
-{
-    unsigned int ra;
-
-    send_pdi_command(0x20|pointer);
-    ra=get_one_byte();
-    return(ra);
-}
-//-------------------------------------------------------------------
-unsigned int pdi_ld_two ( unsigned int pointer )
-{
-    unsigned int ra;
-    unsigned int rb;
-
-    send_pdi_command(0x21|pointer);
-    ra=get_one_byte();
-    rb=get_one_byte();
-    ra|=rb<<8;
-    return(ra);
-}
-//-------------------------------------------------------------------
-unsigned int pdi_ld_four ( unsigned int pointer )
-{
-    unsigned int ra;
-
-    send_pdi_command(0x23|pointer);
-    ra=pdi_get_four_le();
-    return(ra);
-}
-//-------------------------------------------------------------------
-//-------------------------------------------------------------------
-void pdi_sts_four_one (  unsigned int address, unsigned int data )
+void pdi_put8 (  unsigned int address, unsigned int data )
 {
     send_pdi_command(0x4C);
     pdi_send_four_le(address);
     send_pdi_command(data&0xFF);
 }
 //-------------------------------------------------------------------
-void pdi_sts_four_four (  unsigned int address, unsigned int data )
-{
-    send_pdi_command(0x4F);
-    pdi_send_four_le(address);
-    pdi_send_four_le(data);
-}
-//-------------------------------------------------------------------
-unsigned int pdi_lds_four_one (  unsigned int address )
+unsigned int pdi_get8 (  unsigned int address )
 {
     unsigned int ra;
 
@@ -501,63 +510,42 @@ unsigned int pdi_lds_four_one (  unsigned int address )
     return(ra);
 }
 //-------------------------------------------------------------------
-unsigned int pdi_lds_four_four (  unsigned int address )
+void pdi_put16 (  unsigned int address, unsigned int data )
+{
+    send_pdi_command(0x4D);
+    pdi_send_four_le(address);
+    send_pdi_command((data>>0)&0xFF);
+    send_pdi_command((data>>8)&0xFF);
+}
+//-------------------------------------------------------------------
+void pdi_put32 (  unsigned int address, unsigned int data )
+{
+    send_pdi_command(0x4F);
+    pdi_send_four_le(address);
+    pdi_send_four_le(data);
+}
+//-------------------------------------------------------------------
+unsigned int pdi_get32 (  unsigned int address )
 {
     unsigned int ra;
 
     send_pdi_command(0x0F);
     pdi_send_four_le(address);
     ra=pdi_get_four_le();
+
     return(ra);
 }
 //-------------------------------------------------------------------
 //-------------------------------------------------------------------
-void notmain ( void )
+//-------------------------------------------------------------------
+unsigned int pdi_init ( void )
 {
     unsigned int ra;
-    unsigned int rb;
-    unsigned int rc;
-    unsigned int rd;
-    unsigned int re;
-    unsigned int rf;
 
-    ra=0;
-    rb=0;
-    rc=0;
-    rd=0;
-    re=0;
-    rf=0;
-
-
-    clock_init();
-    uart_init();
-    //uart_init_48_to_12();
-    hexstring(0x12345678);
-
-    ASMDELAY(500000);
-
-    ra=GET32(GPIO_DIR1);
-    ra|=1<<8;
-    ra|=1<<9;
-    ra|=1<<10;
-    ra|=1<<11;
-    ra|=1<<17; //pdi_data will be in and out
-    ra|=1<<18; //pdi_clock will be out only
-    PUT32(GPIO_DIR1,ra);
-
-    PUT32(STCTRL,0x00000004); //disabled, no ints, use cpu clock
-    PUT32(STRELOAD,0xFFFFFF);
-    PUT32(STCTRL,0x00000005); //enabled, no ints, use cpu clock
-
-
+    //PUTGETSET(GPIO_DIR1,1<<17);
+    PUTGETSET(GPIO_DIR1,1<<18);
     PUT32(PIO1_17,0x00000000);
     PUT32(PIO1_18,0x00000000);
-
-    pdi_data_in=GET32(GPIO_DIR1);
-    pdi_data_in&=~(1<<17);
-    pdi_data_out=pdi_data_in|(1<<17);
-
-
 
     PDI_DIR_OUT;
     SET_PDI_CLK;
@@ -567,48 +555,51 @@ void notmain ( void )
     send_pdi_break(24);
     send_pdi_idle(24);
 
-    //put it in reset so we can talk to it
+    //put avr core in reset
     send_pdi_command(0xC1);
     send_pdi_command(0x59);
-
+    //check status, verify in reset
     ra=pdi_ldcs(0x01);
 if(0)
 {
     hexstring(ra);
-    exit(1);
+    doexit(1);
 }
     if(ra!=1)
     {
         hexstring(0xBADBAD00);
-        exit(1);
+        return(1);
     }
+    //change guard time to 8+ clocks, makes this much faster
     pdi_stcs(0x02,0x04);
 
-
-
     //read id and rev
-    pdi_st_four(POINTER_PTR,0x01000090);
-    ra=pdi_ld_four(POINTER_xPTR);
+    ra=pdi_get32(0x01000090);
 if(0)
 {
     hexstring(ra);
-    exit(1);
+    doexit(1);
 }
     if((ra&0x00FFFFFF)!=0x004C971E)
     {
-        hexstring(0xBADBAD10);
-        exit(1);
+        hexstring(ra);
+        hexstring(0xBADBAD01);
+        return(1);
     }
-
-
-
+    return(0);
+}
+//-------------------------------------------------------------------
+unsigned int unlock_nvm ( void )
+{
+    unsigned int ra;
+    unsigned int rb;
 
     //unlock nvm
     ra=pdi_ldcs(0x00);
 if(0)
 {
     hexstring(ra);
-    exit(1);
+    doexit(1);
 }
     if((ra&2)==0)
     {
@@ -628,14 +619,21 @@ if(0)
         }
         if(rb>=100)
         {
-            hexstring(0xBADBAD00);
-            exit(1);
+            hexstring(0xBADBAD02);
+            return(1);
         }
     }
     //NVM Unlocked
+    return(0);
+}
+//-------------------------------------------------------------------
+unsigned int nvm_chip_erase ( void )
+{
+    unsigned int ra;
+    unsigned int rb;
 
-    pdi_sts_four_one(0x010001CA,0x40);
-    pdi_sts_four_one(0x010001CB,0x01);
+    pdi_put8(0x010001CA,0x40); //chip erase
+    pdi_put8(0x010001CB,0x01); //cmdex
     for(ra=0;;ra++)
     {
         rb=pdi_ldcs(0x00);
@@ -645,96 +643,120 @@ if(0)
 {
     hexstring(ra);
     hexstring(rb);
-    exit(1);
+    doexit(1);
 }
-
-
-
-if(1)
+    return(0);
+}
+//-------------------------------------------------------------------
+#define BOOT_PAGE_SIZE 0x100
+#define BOOT_BASE_ADD  0x00820000
+//-------------------------------------------------------------------
+unsigned int load_bootloader_flash ( unsigned short *bin, unsigned int len )
 {
-    unsigned char pre_data[0x20];
-    unsigned char some_data[0x20];
+    unsigned int ra;
+    unsigned int rb;
+    unsigned int add;
 
-
-    pdi_sts_four_one(0x010001CA,0x43);
-    for(ra=0;ra<0x20;ra++)
+    add=0;
+    while(add<len)
     {
-        pre_data[ra]=pdi_lds_four_one(0x00820000+ra);
+        //load flash page buffer
+        pdi_put8(0x010001CA,0x23);
+        for(ra=0;ra<BOOT_PAGE_SIZE;ra+=2)
+        {
+            add+=2;
+            if(add<len)
+            {
+                pdi_put8(BOOT_BASE_ADD+add+0,(bin[add>>1]>>0)&0xFF);
+                pdi_put8(BOOT_BASE_ADD+add+1,(bin[add>>1]>>8)&0xFF);
+            }
+            else
+            {
+                pdi_put8(BOOT_BASE_ADD+add+0,0xFF);
+                pdi_put8(BOOT_BASE_ADD+add+1,0xFF);
+            }
+        }
+        ra=pdi_get8(0x010001CF);
+        rb=pdi_get8(0x010001CF);
+        if(0)
+        {
+            hexstring(ra);
+            hexstring(rb);
+            doexit(1);
+        }
+
+        pdi_put8(0x010001CA,0x2C);
+        pdi_put8(BOOT_BASE_ADD+add,0x00);
+        for(ra=0;;ra++)
+        {
+            rb=pdi_get8(0x010001CF);
+            if(rb==0) break;
+        }
+        if(0)
+        {
+            hexstring(ra);
+            hexstring(rb);
+            doexit(1);
+        }
+
     }
 
 if(0)
 {
-    for(ra=0;ra<0x20;ra++)
+    unsigned char some_data[0x60];
+
+    pdi_put8(0x010001CA,0x43);
+    for(ra=0;ra<0x60;ra++)
     {
-        hexstrings(ra); hexstring(pre_data[ra]);
+        some_data[ra]=pdi_get8(0x00820000+ra);
     }
-    exit(1);
+    for(ra=0;ra<0x60;ra++)
+    {
+        hexstrings(ra); hexstring(some_data[ra]);
+    }
+    doexit(1);
 }
 
 
-    //load flash page buffer
-    pdi_sts_four_one(0x010001CA,0x23);
-    for(ra=0;ra<0x100;ra+=2)
-    {
-        pdi_sts_four_one(0x00820000+ra+0,(rom[ra>>1]>>0)&0xFF);
-        pdi_sts_four_one(0x00820000+ra+1,(rom[ra>>1]>>8)&0xFF);
-    }
-    ra=pdi_lds_four_one(0x010001CF);
-    rb=pdi_lds_four_one(0x010001CF);
-if(0)
+    return(0);
+}
+//-------------------------------------------------------------------
+unsigned int pdi_close ( void )
 {
-    hexstring(ra);
-    hexstring(rb);
-    exit(1);
-}
-
-
-    pdi_sts_four_one(0x010001CA,0x2C);
-    pdi_sts_four_one(0x00820000,0x00);
-    for(ra=0;;ra++)
-    {
-        rb=pdi_lds_four_one(0x010001CF);
-        if(rb==0) break;
-    }
-if(0)
-{
-    hexstring(ra);
-    hexstring(rb);
-    exit(1);
-}
-
-
-    pdi_sts_four_one(0x010001CA,0x43);
-    for(ra=0;ra<0x20;ra++)
-    {
-        some_data[ra]=pdi_lds_four_one(0x00820000+ra);
-    }
-
-
     send_pdi_command(0xC1);
     send_pdi_command(0x00);
-
-
-    pdi_sts_four_one(0x010001CA,0x43);
-
-    ra=pdi_lds_four_one(0x008F0020);
-    rb=pdi_lds_four_one(0x008F0021);
-    rc=pdi_lds_four_one(0x008F0022);
-
-    hexstring(ra);
-    hexstring(rb);
-    hexstring(rc);
-
-
-
-    for(ra=0;ra<0x20;ra++)
-    {
-        hexstrings(ra); hexstrings(some_data[ra]); hexstring(pre_data[ra]);
-    }
-
-
+    return(0);
 }
+//-------------------------------------------------------------------
+void notmain ( void )
+{
+    clock_init();
+    uart_init();
+    //uart_init_48_to_12();
+    hexstring(0x12345678);
+
+    ASMDELAY(500000); //seems to get reset twice pressing the button once.
+
+    //Once you start talking on the pdi bus, you have to keep the clock
+    //running, bit banging in this manner that means you cannot stop
+    //to print things out, no printing of messages on the uart unless
+    //you plan to stop communication with the xmega, and/or unless
+    //you plan to start over initializing communication with the part.
+    if(pdi_init()) doexit(1);
+    if(unlock_nvm()) doexit(1);
+    if(nvm_chip_erase()) doexit(1);
+    if(load_bootloader_flash((unsigned short *)rom,ROM_LENGTH<<1)) doexit(1);
+    if(pdi_close()) doexit(1);
+    // can print now and do whatever, want to let the pdi clock line stop
+    // which will let the part run normally.
+
+    send_pdi_idle(200);
+    send_pdi_break(24);
+    send_pdi_idle(24);
+
 
     hexstring(0xAABBCCDD);
     hexstring(0x12345678);
 }
+//-------------------------------------------------------------------
+//-------------------------------------------------------------------
