@@ -1,8 +1,10 @@
 
-.org 0x0000
-    rjmp RESET
+.globl _start
+_start:
+    rjmp reset
 
-RESET:
+
+reset:
 
     ldi r19,0x02
     ldi r30,0x50
@@ -27,36 +29,16 @@ osc_wait:
     nop
     nop
 
-over:
 
-    ldi R16,0x80
-    sts 0x6A1,R16
-    ldi R16,0xFF
-    sts 0x6A4,R16
+    rcall notmain
+    rjmp .
 
-    ldi R21,0xFF
+.globl dummy
+dummy:
+    ldi r24,0x00
+1:
+    inc r24
+    brne 1b
 
-
-     ldi R18,0x00
-     ldi R17,0x00
-     ldi R20,0x20
- Loop:
-
-     ldi R19,0xD0
- aloop:
-     inc R17
-     cpi R17,0x00
-     brne aloop
-
-     inc R18
-     cpi R18,0x00
-     brne aloop
-
-     inc R19
-     cpi R19,0x00
-     brne aloop
-
-     eor R16,R21
-     sts 0x6A4, R16
-     rjmp Loop
+    ret
 

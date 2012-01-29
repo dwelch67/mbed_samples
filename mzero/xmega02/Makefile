@@ -52,17 +52,22 @@ xmega02.clang.thumb.opt.bin : memmap vectors.o xmega02.clang.bc
 dumphex : dumphex.c
 	gcc -o dumphex dumphex.c
 
-blinker.h : blinker01.s.hex dumphex
-	./dumphex blinker01.s.hex
+blinker.h : blinker03.hex dumphex
+	./dumphex blinker03.hex
 
 
 blinker01.s.hex : blinker01.s
 	avra -fI blinker01.s
 
-
-
 blinker02.s.hex : blinker02.s
 	avra -fI blinker02.s
+
+blinker03.hex : blinker03.s xblinker.c avrmap
+	avr-as blinker03.s -o blinker03.o
+	avr-gcc -c $(COPS) xblinker.c -o xblinker.o
+	avr-ld -T avrmap blinker03.o xblinker.o -o blinker03.elf
+	avr-objdump -D blinker03.elf > blinker03.list
+	avr-objcopy blinker03.elf -O ihex blinker03.hex
 
 clean:
 	rm -f *.bin
