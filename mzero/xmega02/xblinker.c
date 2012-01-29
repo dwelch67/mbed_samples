@@ -1,6 +1,7 @@
 
 #define PORTF_BASE 0x6A0
 #define PORTF_DIRSET (*((volatile unsigned char *)(PORTF_BASE+0x01)))
+#define PORTF_DIRCLR (*((volatile unsigned char *)(PORTF_BASE+0x02)))
 #define PORTF_OUT (*((volatile unsigned char *)(PORTF_BASE+0x04)))
 #define PORTF_OUTSET (*((volatile unsigned char *)(PORTF_BASE+0x05)))
 #define PORTF_OUTCLR (*((volatile unsigned char *)(PORTF_BASE+0x06)))
@@ -28,6 +29,12 @@ void uart_putc ( unsigned char x )
     UARTF0_DATA=x;
 }
 
+unsigned char uart_getc ( void )
+{
+    while((UARTF0_STATUS&(1<<7))==0) continue;
+    return(UARTF0_DATA);
+}
+
 void hexstring ( unsigned int d )
 {
     //unsigned int ra;
@@ -49,29 +56,29 @@ void hexstring ( unsigned int d )
 
 void notmain ( void )
 {
-    unsigned int ra;
+    unsigned char ca;
+
 
     //setup GPIOF7 for led output
     PORTF_DIRSET=1<<7;
     PORTF_OUTSET=1<<7;
 
-    //initialize uartf0 TX0 on GPIOF3
+    //initialize uartf0 TX0 on GPIOF3 RX0 on GPIOF2
     PORTF_DIRSET=1<<3;
     PORTF_OUTSET=1<<3;
+    PORTF_DIRCLR=1<<2;
     UARTF0_CTRLC=0x03;
     UARTF0_BAUDCTRLA=16;
     UARTF0_BAUDCTRLB=0;
-    UARTF0_CTRLB=1<<3;
+    UARTF0_CTRLB=(1<<3)|(1<<4);
 
     while(1)
     {
-        for(ra=0x3000;ra;ra--) dummy();
+        ca=uart_getc();
+        uart_putc(ca);
         PORTF_OUTCLR=0x80;
-        //uart_putc(0x55);
-        hexstring(0x1234);
-        for(ra=0x3000;ra;ra--) dummy();
+        ca=uart_getc();
+        uart_putc(ca);
         PORTF_OUTSET=0x80;
-        //uart_putc(0x56);
-        hexstring(0xABCD);
     }
 }
