@@ -6,6 +6,8 @@ _start:
 
 reset:
 
+    ;rjmp over
+
     ldi r19,0x02
     ldi r30,0x50
     ldi r31,0x00
@@ -29,9 +31,11 @@ osc_wait:
     nop
     nop
 
+over:
 
     rcall notmain
-    rjmp .
+1:
+    rjmp 1b
 
 .globl dummy
 dummy:

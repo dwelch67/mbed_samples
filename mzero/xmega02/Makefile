@@ -80,5 +80,6 @@ clean:
 	rm -f blinker01.s.*
 	rm -f blinker02.s.*
 	rm -f dumphex
+	rm -f *.hex
 
 

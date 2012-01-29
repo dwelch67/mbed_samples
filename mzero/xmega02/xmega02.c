@@ -45,6 +45,12 @@ extern void doexit ( unsigned int );
 #define GPIO_SET1 (GPIO_BASE+0x2204)
 #define GPIO_CLR1 (GPIO_BASE+0x2284)
 
+
+#define GPIO0_B16 (GPIO_BASE+0x10)
+#define GPIO0_B17 (GPIO_BASE+0x11)
+#define GPIO0_B18 (GPIO_BASE+0x12)
+
+
 #define STCTRL   0xE000E010
 #define STRELOAD 0xE000E014
 #define STCURR   0xE000E018
@@ -83,6 +89,8 @@ extern void doexit ( unsigned int );
 
 
 #define PIO0_7          0x4004401C
+#define PIO0_17         0x40044044
+
 #define PIO1_17         0x400440A4
 #define PIO1_18         0x400440A8
 
@@ -656,15 +664,16 @@ unsigned int load_bootloader_flash ( unsigned short *bin, unsigned int len )
     unsigned int ra;
     unsigned int rb;
     unsigned int add;
+    unsigned int base;
 
     add=0;
     while(add<len)
     {
+        base=add;
         //load flash page buffer
         pdi_put8(0x010001CA,0x23);
         for(ra=0;ra<BOOT_PAGE_SIZE;ra+=2)
         {
-            add+=2;
             if(add<len)
             {
                 pdi_put8(BOOT_BASE_ADD+add+0,(bin[add>>1]>>0)&0xFF);
@@ -675,6 +684,7 @@ unsigned int load_bootloader_flash ( unsigned short *bin, unsigned int len )
                 pdi_put8(BOOT_BASE_ADD+add+0,0xFF);
                 pdi_put8(BOOT_BASE_ADD+add+1,0xFF);
             }
+            add+=2;
         }
         ra=pdi_get8(0x010001CF);
         rb=pdi_get8(0x010001CF);
@@ -686,7 +696,7 @@ unsigned int load_bootloader_flash ( unsigned short *bin, unsigned int len )
         }
 
         pdi_put8(0x010001CA,0x2C);
-        pdi_put8(BOOT_BASE_ADD+add,0x00);
+        pdi_put8(BOOT_BASE_ADD+base,0x00);
         for(ra=0;;ra++)
         {
             rb=pdi_get8(0x010001CF);
@@ -703,14 +713,14 @@ unsigned int load_bootloader_flash ( unsigned short *bin, unsigned int len )
 
 if(0)
 {
-    unsigned char some_data[0x60];
+    unsigned char some_data[0x200];
 
     pdi_put8(0x010001CA,0x43);
-    for(ra=0;ra<0x60;ra++)
+    for(ra=0;ra<0x200;ra++)
     {
         some_data[ra]=pdi_get8(0x00820000+ra);
     }
-    for(ra=0;ra<0x60;ra++)
+    for(ra=0;ra<0x200;ra++)
     {
         hexstrings(ra); hexstring(some_data[ra]);
     }
@@ -753,7 +763,6 @@ void notmain ( void )
     send_pdi_idle(200);
     send_pdi_break(24);
     send_pdi_idle(24);
-
 
     hexstring(0xAABBCCDD);
     hexstring(0x12345678);
