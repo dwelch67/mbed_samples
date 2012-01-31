@@ -30,6 +30,19 @@ The second is the LPC1768 users manual
 http://ics.nxp.com/support/documents/microcontrollers/pdf/user.manual.lpc17xx.pdf
 
 
+Need a place for these, notes to self about building binutils and gcc
+from sources:
+
+
+../configure --target=arm-none-eabi --prefix=/gnuarm --disable-werror?
+../configure --target=arm-none-eabi --prefix=/gnuarm --disable-werror --disable-nls
+
+../configure --target=arm-none-eabi --prefix=/gnuarm  --disable-libssp --disable-libc --disable-libgcc
+important to use make all-gcc and install-gcc instead of just make and make install
+
+
+
+
 
 
 
