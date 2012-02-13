@@ -1,0 +1,303 @@
+
+This second installment of infrared (as in remote controls for tvs and
+dvd players and such) examples completes an infra red decoder for one
+of the popular protocols.
+
+This web page
+
+http://www.sbprojects.com/knowledge/ir/index.php
+
+Does a good job of talking about and creating a visual picture of what
+is going on.
+
+All infrared receivers are not created equal, you need to do your
+research for a number of different reasons.  First there are what I
+call modules, like the one used in this project that not only receives
+the light and turns it into electrical pulses, but also demodulates it.
+You dont have to deal with a signal in the tens of KHz, instead something
+closer to a few KHz or slower.  Bursts of pulses in the few millisecond
+or hundreds of microseconds range.  If you were building a set top box
+of some sort like yet another roku, you should choose components that
+properly match the carrier frequency.  Dont use 38Khz parts for a 40Khz
+carrier for example.  You can get away with it but the timing will be
+off, the demodulated signals may be too long or short, or you might not
+be able to receive the signals from as far or near as you would have
+normally.
+
+Double and triple check the pinout, very easy to let out the smoke from
+the part and stink up the room.
+
+This project is using a generic receiver module that is available
+at Sparkfun, a single source for lots of these kinds of toys.
+
+http://www.sparkfun.com/products/10266
+
+Having access to an oscilloscope is always good for debugging
+software/projects, but not absolutely required for this one.  If you
+happen to have access to a scope, or even if you dont it is good to
+have a few of these around:
+
+http://www.sparkfun.com/products/9873
+
+Easy to shove the power and ground pins in, leave the data pin hanging
+out and attach the scope probe to.
+
+The scope is not required just helps to provide some sanity if you
+start having problems figuring out your decoder.  Or to verify the
+remote is using the protocol you think it is using.
+
+Personally I prefer the protocols that have a distinctive start pattern.
+Look at the JVC, NEC, and Philips RC-6 as an example on the sbprojects
+page linked above.
+
+The protocol being docoded by this example appears to be the NEC protocol
+starting with a 9ms start pulse then a 4.5ms pulse when sending a code
+and 2.25ms for a repeat.  Also it has a 32 bits of data in the protocol.
+
+If we start with the uart01 example which leaves the mbed at 12Mhz and
+uses the cortex-m0 system timer (no divisor).  A 9ms pulse would be
+0.009 * 12000000 = 108000.
+
+So the first thing to do is wire it up, and monitor the ir input to the
+mbed for a falling edge, when you see that snapshot the timer, then when
+you see a rising edge, take a snapshot of the timer.  If the difference
+is well below 108000, try again, when you get one that is somewhat close
+then blink an led or do what I do and print the timer count out the
+uart.  Then wrap a min/max around it and print that out...
+
+    while(1)
+    {
+        while(GET32(GPIO_PIN0)&(1<<17)) continue; //to low
+        a=GET32(STCURR);
+        while(1) if(GET32(GPIO_PIN0)&(1<<17)) break; //to high
+        b=GET32(STCURR);
+        c=(a-b)&0x00FFFFFF;
+        if(c<99000) continue;
+
+        if(c<min) min=c;
+        if(c>max) max=c;
+        hexstrings(min); hexstring(max);
+    }
+
+This will give you a feel for what your system really thinks the length
+of the pulse is.  And you can start to get that warm fuzzy feeling that
+something is working, a small taste of success.  You can now isolate
+a min-max range, anything outside that will be considered an error
+and you want to go back to searching for the start pulse.
+
+    while(1)
+    {
+        while(GET32(GPIO_PIN0)&(1<<17)) continue; //to low
+        a=GET32(STCURR);
+        while(1) if(GET32(GPIO_PIN0)&(1<<17)) break; //to high
+        b=GET32(STCURR);
+        c=(a-b)&0x00FFFFFF;
+        if(c<(STARTMIN)) continue;
+        if(c>(STARTMAX)) continue;
+        ...
+    }
+
+Now measure the next pulse, depending on your remote and whether it is
+this protocol or not you may see two different values a longer value
+and shorter.
+
+
+    while(1)
+    {
+        while(GET32(GPIO_PIN0)&(1<<17)) continue; //to low
+        a=GET32(STCURR);
+        while(1) if(GET32(GPIO_PIN0)&(1<<17)) break; //to high
+        b=GET32(STCURR);
+        c=(a-b)&0x00FFFFFF;
+        if(c<(STARTMIN)) continue;
+        if(c>(STARTMAX)) continue;
+
+        while(GET32(GPIO_PIN0)&(1<<17)) continue; //to low
+        a=GET32(STCURR);
+        c=(b-a)&0x00FFFFFF;
+
+        if(c<min) min=c;
+        if(c>max) max=c;
+
+        while(1) if(GET32(GPIO_PIN0)&(1<<17)) break; //to high
+
+        hexstrings(min); hexstring(max);
+    }
+
+
+You might need to put another limit in here to isolate a shorter repeat
+start pulse (which ends the pulse train) or the longer pulse which
+indicates more pulses are coming with the unique code.
+
+    while(1)
+    {
+        while(GET32(GPIO_PIN0)&(1<<17)) continue; //to low
+        a=GET32(STCURR);
+        while(1) if(GET32(GPIO_PIN0)&(1<<17)) break; //to high
+        b=GET32(STCURR);
+        c=(a-b)&0x00FFFFFF;
+        if(c<(STARTMIN)) continue;
+        if(c>(STARTMAX)) continue;
+
+        while(GET32(GPIO_PIN0)&(1<<17)) continue; //to low
+        a=GET32(STCURR);
+        c=(b-a)&0x00FFFFFF;
+
+        if(c<495000) continue; //one or the other of these
+        //if(c>495000) continue; //one or the other of these
+
+        if(c<min) min=c;
+        if(c>max) max=c;
+
+        while(1) if(GET32(GPIO_PIN0)&(1<<17)) break; //to high
+
+        hexstrings(min); hexstring(max);
+    }
+
+Here again apply a pass/fail window for what you are looking for
+based on the min/max values.
+
+And now start looking at the short low pulse.  So far we are looking for
+a long low pulse, a high pulse half or a quarter of the length of the
+long start pulse.  And now the first of these short low pulses that
+will divide up the 32 data bits.
+
+    while(1)
+    {
+        while(GET32(GPIO_PIN0)&(1<<17)) continue; //to low
+        a=GET32(STCURR);
+        while(1) if(GET32(GPIO_PIN0)&(1<<17)) break; //to high
+        b=GET32(STCURR);
+        c=(a-b)&0x00FFFFFF;
+        if(c<(STARTMIN)) continue;
+        if(c>(STARTMAX)) continue;
+
+        while(GET32(GPIO_PIN0)&(1<<17)) continue; //to low
+        a=GET32(STCURR);
+        c=(b-a)&0x00FFFFFF;
+        if(c<(CODEMIN)) continue;
+        if(c>(CODEMAX)) continue;
+
+        while(1) if(GET32(GPIO_PIN0)&(1<<17)) break; //to high
+        b=GET32(STCURR);
+        c=(a-b)&0x00FFFFFF;
+
+        if(c<min) min=c;
+        if(c>max) max=c;
+        hexstrings(min); hexstring(max);
+    }
+
+
+If we are decoding the right protocol and have not just been lucky with
+say the JVC protocol described on the sbprojects page, then there should
+be 32 data bits each ending in one of these low short pulses.
+
+
+    while(1)
+    {
+        while(GET32(GPIO_PIN0)&(1<<17)) continue; //to low
+        a=GET32(STCURR);
+        while(1) if(GET32(GPIO_PIN0)&(1<<17)) break; //to high
+        b=GET32(STCURR);
+        c=(a-b)&0x00FFFFFF;
+        if(c<(STARTMIN)) continue;
+        if(c>(STARTMAX)) continue;
+
+        while(GET32(GPIO_PIN0)&(1<<17)) continue; //to low
+        a=GET32(STCURR);
+        c=(b-a)&0x00FFFFFF;
+        if(c<(CODEMIN)) continue;
+        if(c>(CODEMAX)) continue;
+
+        while(1) if(GET32(GPIO_PIN0)&(1<<17)) break; //to high
+        b=GET32(STCURR);
+        c=(a-b)&0x00FFFFFF;
+
+        if(c<min) min=c;
+        if(c>max) max=c;
+
+        for(ra=0;ra<32;ra++)
+        {
+            while(GET32(GPIO_PIN0)&(1<<17)) continue; //to low
+            a=GET32(STCURR);
+
+            //data pulse
+
+            while(1) if(GET32(GPIO_PIN0)&(1<<17)) break; //to high
+            b=GET32(STCURR);
+            c=(a-b)&0x00FFFFFF;
+
+            if(c<min) min=c;
+            if(c>max) max=c;
+        }
+
+        hexstrings(min); hexstring(max);
+    }
+
+If you get no output it is possible you are not decoding the protocol
+you think you are decoding, there might not be 32 data bits.
+
+You can see in the final code where you go from here.  A min/max limit
+is applied to the fixed sized low pulses, and then the data pulses
+are measured for a one or zero (arbitrarily chosen which is one and
+which is zero).
+
+Now what I found is that some of my remotes follow the nec protocol
+as defined at the sbprojects page, where you have 8 data bits then
+those 8 bits repeat inverted, then 8 more bits, and those 8 bits
+repeat inverted.  But not all of the remotes do this.  Likewise
+the NEC protocol on that page defines a different start pattern for
+a repeat.  You get one pattern with the code, then a bunch of repeats
+until you let the button go.  Some of my remotes do this some
+dont, sometimes they just blast the pattern forever, some blast a few
+and stop.  My roku remote, doesnt do the inverted pattern thing, when
+it repeats it sends the same pattern except the last bit is a inverted.
+Using my arbitrary definition of one and zero, the roku remote would
+first send 0x574332CD then the repeats would be 0x574332CC until you
+let go of the button.
+
+The above is all well and good, you can now decode a remote control
+prodocol on your microcontroller.  But there is a problem, the min/max
+values I found experimentally are short, instead of 9ms it was more like
+8.4ms but it wasnt the other, shorter, protocol that uses an 8.something
+ms pulse to start.  ired03 repeats the ired02 sample but uses a 48Mhz
+clock derived from the external clock instead of the 12mhz internal clock.
+With this, probably more accurate, external based clock, it is still
+coming up with the same numbers.  Now the tough choices.  Assuming
+the clock is good, and it is the remote that doesnt match the sbprojects
+page (the sbprojects page is determined experimentally) do we use only
+experimentally determined numbers for this one microcontroller,
+one receiver module and one remote control?  Do we buy a bunch of
+microcontrollers and see if it is consistent?  Do we buy a bunch of
+remote controls?  If we assume the sbprojects numbers are derived from
+a standard and this is a generic receiver then a little math can be done
+to find the ideal measurement of a pulse, and based on experimental
+numbers create a level of error for each pulse that works with this
+one remote and microcontroller today, and hope to work with others
+tomorrow.
+
+For example, experiments showed the min/max measurement of the start
+pulse with this one remote is
+
+//000188F9 0001913D
+//100601 8.38ms  102717 8.55ms
+
+And short term that lead to these limits.  For one remote one day it
+very quickly lead to a decoded protocol.
+
+#define STARTMIN 100000
+#define STARTMAX 104000
+
+If the ideal 9ms pulse is 108000 timer counts and we are as low as
+100601 then perhaps we apply a +/-8000 count window:
+
+#define STARTMIN 100000
+#define STARTMAX 116000
+
+Or maybe even make it wider.
+
+
+
+
+
+

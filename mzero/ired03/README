@@ -1,0 +1,6 @@
+
+See the ired02 README, it goes into detail as to what is going on.
+
+ired03 is the same as ired02 except it uses a 48MHz system clock
+instead of the 12MHz clock.
+
