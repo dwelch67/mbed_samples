@@ -3,11 +3,11 @@
 #ARMGNU=arm-none-linux-gnueabi
 ARMGNU?=arm-none-eabi
 
-LOPS = -Wall -m32 -emit-llvm
+LOPS = -Wall -m32 -emit-llvm -ccc-host-triple $(ARMGNU)
 
-LLCOPS = -march=thumb
+LLCOPS = -march=thumb -mtriple=$(ARMGNU)
 
-LLCOPS2 = -march=thumb -mcpu=cortex-m3 
+LLCOPS2 = -march=thumb -mtriple=$(ARMGNU) -mcpu=cortex-m3
 
 COPS = -Wall  -O2 -nostdlib -nostartfiles -ffreestanding
 

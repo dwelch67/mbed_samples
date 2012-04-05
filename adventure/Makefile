@@ -6,11 +6,11 @@ COPS = -mthumb -Wall -Werror -Os -nostdlib -nostartfiles -ffreestanding
 COPS2 = -mthumb -mcpu=cortex-m3 -march=armv7-m -Wall -Werror -Os -nostdlib -nostartfiles -ffreestanding
 
 
-LOPS = -Wall -m32 -emit-llvm
+LOPS = -Wall -m32 -emit-llvm -ccc-host-triple $(ARMGNU)
 
-LLCOPS = -march=thumb
+LLCOPS = -march=thumb -mtriple=$(ARMGNU)
 
-LLCOPS2 = -march=thumb -mcpu=cortex-m3 
+LLCOPS2 = -march=thumb -mtriple=$(ARMGNU) -mcpu=cortex-m3
 
 OOPS = -std-compile-opts
 

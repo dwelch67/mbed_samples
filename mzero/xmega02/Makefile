@@ -3,9 +3,9 @@
 #ARMGNU=arm-none-linux-gnueabi
 ARMGNU?=arm-none-eabi
 
-LOPS = -Wall -m32 -emit-llvm
+LOPS = -Wall -m32 -emit-llvm -ccc-host-triple $(ARMGNU)
 
-LLCOPS = -march=thumb
+LLCOPS = -march=thumb -mtriple=$(ARMGNU)
 
 COPS = -Wall  -O2 -nostdlib -nostartfiles -ffreestanding
 
