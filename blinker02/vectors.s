@@ -25,6 +25,7 @@
 .word   hang        /* 18 External Interrupt(2) */
 .word   hang        /* 19 ...   */
 
+.thumb_func
 hang:   b .
 
 .thumb_func
