@@ -1,4 +1,5 @@
 
+#include "blinker.h"
 
 extern void PUT8 ( unsigned int, unsigned int );
 extern unsigned int GET8 ( unsigned int );
@@ -322,6 +323,11 @@ int notmain ( void )
     unsigned int rb;
     unsigned int rc;
 
+    unsigned int pages;
+    unsigned int psize;
+    unsigned int np;
+    unsigned int poff;
+
     ra=0;
 
     clock_init();
@@ -389,20 +395,45 @@ int notmain ( void )
         hexstring((ra<<16)|((rb&0xFF)<<8)|(rc&0xFF));
     }
 
-    for(ra=0;ra<3;ra++)
-    {
-        pdi_command(0x40000000|(ra<<8)|(ra&0xFF)); //low first
-        pdi_command(0x48000000|(ra<<8)|(ra&0xFF)); //then high
-    }
-    for(;ra<64;ra++)
-    {
-        pdi_command(0x400000FF|(ra<<8)); //low first
-        pdi_command(0x480000FF|(ra<<8)); //then high
-    }
-    //pdi_command(0x4C000000);
+if(0)
+{
 
     pdi_command(0xAC800000);
     SET_RST;
+}
+
+if(1)
+{
+    psize=sizeof(rom);
+    psize>>=1;
+    pages=psize>>6;
+
+    hexstring(psize);
+    hexstring(pages);
+
+    poff=0;
+    //for(np=0;np<pages;np++)
+    {
+        for(ra=0;ra<64;ra++)
+        {
+//            if(poff>=psize) break;
+            pdi_command(0x40000000|(ra<<8)|((rom[poff]>>0)&0xFF)); //low first
+            pdi_command(0x48000000|(ra<<8)|((rom[poff]>>8)&0xFF)); //then high
+            poff++;
+        }
+        //for(;ra<64;ra++)
+        //{
+            //pdi_command(0x400000FF|(ra<<8)); //low first
+            //pdi_command(0x480000FF|(ra<<8)); //then high
+            ////poff++;
+        //}
+        pdi_command(0x4D000000);
+        pdi_command(0x4C000000);//|(np<<14));
+        ASMDELAY(100000);
+    }
+    SET_RST;
+    hexstring(poff);
+}
 
     ra=GET32(GPIO_DIR1);
     ra&=~(1<<ARD_PDI_PIN);

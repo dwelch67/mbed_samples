@@ -22,7 +22,7 @@ all : promicro.gcc.thumb.bin promicro.clang.thumb.norm.bin promicro.clang.thumb.
 vectors.o : vectors.s
 	$(ARMGNU)-as vectors.s -o vectors.o
 
-promicro.gcc.thumb.o : promicro.c 
+promicro.gcc.thumb.o : promicro.c blinker.h
 	$(ARMGNU)-gcc $(COPS) -mthumb -c promicro.c -o promicro.gcc.thumb.o
 
 promicro.gcc.thumb.bin : memmap vectors.o promicro.gcc.thumb.o
@@ -31,7 +31,7 @@ promicro.gcc.thumb.bin : memmap vectors.o promicro.gcc.thumb.o
 	$(ARMGNU)-objcopy promicro.gcc.thumb.elf promicro.gcc.thumb.bin -O binary
 
 
-promicro.clang.bc : promicro.c
+promicro.clang.bc : promicro.c blinker.h
 	clang $(LOPS) -c promicro.c -o promicro.clang.bc
 
 promicro.clang.thumb.norm.bin : memmap vectors.o promicro.clang.bc
@@ -48,6 +48,20 @@ promicro.clang.thumb.opt.bin : memmap vectors.o promicro.clang.bc
 	$(ARMGNU)-ld -o promicro.clang.thumb.opt.elf -T memmap vectors.o promicro.clang.thumb.opt.o
 	$(ARMGNU)-objdump -D promicro.clang.thumb.opt.elf > promicro.clang.thumb.opt.list
 	$(ARMGNU)-objcopy promicro.clang.thumb.opt.elf promicro.clang.thumb.opt.bin -O binary
+
+
+dumphex : dumphex.c
+	gcc -o dumphex dumphex.c
+
+blinker.h : blinker01.s.hex dumphex
+	./dumphex blinker01.s.hex
+
+
+blinker01.s.hex : blinker01.s
+	avra -fI blinker01.s
+
+blinker02.s.hex : blinker02.s
+	avra -fI blinker02.s
 
 clean:
 	rm -f *.bin
