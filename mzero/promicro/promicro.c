@@ -278,7 +278,7 @@ unsigned int pdi_data_in,pdi_data_out;
 #define SET_SCK PUT8(ARD_SCK_REG,1)
 #define CLR_SCK PUT8(ARD_SCK_REG,0)
 
-#define DELX 10
+#define DELX 20
 
 #define POINTER_xPTR   0x00
 #define POINTER_xPTRpp 0x04
@@ -291,10 +291,36 @@ unsigned int pdi_data_in,pdi_data_out;
 
 
 //-------------------------------------------------------------------
+unsigned int pdi_command ( unsigned int command )
+{
+    unsigned int ra,rb,rc;
+
+    //hexstring(command);
+    rb=command;
+    rc=0x00000000;
+    //CLR_SCK;
+    ASMDELAY(DELX);
+    for(ra=0;ra<32;ra++)
+    {
+        PUT8(ARD_PDI_REG,(rb>>31)&1); rb<<=1;
+        rc<<=1; rc|=GET8(ARD_PDO_REG)&1;
+        ASMDELAY(DELX);
+        SET_SCK;
+        ASMDELAY(DELX);
+        ASMDELAY(DELX);
+        CLR_SCK;
+        ASMDELAY(DELX);
+    }
+    ASMDELAY(DELX);
+    //hexstring(rc);
+    return(rc);
+}
 //-------------------------------------------------------------------
-void notmain ( void )
+int notmain ( void )
 {
     unsigned int ra;
+    unsigned int rb;
+    unsigned int rc;
 
     ra=0;
 
@@ -310,8 +336,8 @@ void notmain ( void )
     ra|=1<<10;
     ra|=1<<11;
     ra&=~(1<<ARD_PDO_PIN);
-    ra&=~(1<<ARD_PDI_PIN);
-    ra&=~(1<<ARD_SCK_PIN);
+    ra|=1<<ARD_PDI_PIN;
+    ra|=1<<ARD_SCK_PIN;
     ra|=1<<ARD_RST_PIN;
     PUT32(GPIO_DIR1,ra);
 
@@ -321,34 +347,69 @@ void notmain ( void )
     PUT32(PIO1_25,0x00000000);
     PUT32(PIO1_26,0x00000000);
 
-
-    //release reset on the avr
-    SET_RST;
-
-    ASMDELAY(500000);
-
-    ra=GET32(GPIO_DIR1);
-    ra|=1<<ARD_SCK_PIN;
-    PUT32(GPIO_DIR1,ra);
-
     CLR_SCK;
-    //assert reset
     CLR_RST;
 
-    //drive against avr pins to program
-    ra=GET32(GPIO_DIR1);
-    ra|=1<<ARD_PDO_PIN;
-    ra|=1<<ARD_PDI_PIN;
-    ra|=1<<ARD_SCK_PIN;
-    PUT32(GPIO_DIR1,ra);
+    ASMDELAY(500000); //seems like you bounce or get more than one mbed reset
+
+    SET_RST;
+    ASMDELAY(100);
+    CLR_RST;
+    ASMDELAY(100);
 
     PUT32(STCTRL,0x00000004); //disabled, no ints, use cpu clock
     PUT32(STRELOAD,0xFFFFFF);
     PUT32(STCTRL,0x00000005); //enabled, no ints, use cpu clock
 
+    ra=pdi_command(0xAC530000);
+    if((ra&0x0000FF00)!=0x00005300)
+    {
+        hexstring(0xBAD);
+        return(1);
+    }
+    rb=0;
+    ra=pdi_command(0x30000000);
+    rb<<=8; rb|=ra&0xFF;
+    ra=pdi_command(0x30000100);
+    rb<<=8; rb|=ra&0xFF;
+    ra=pdi_command(0x30000200);
+    rb<<=8; rb|=ra&0xFF;
+    hexstring(rb);
+    if(rb!=0x001E9587)
+    {
+        //not really an error, this code is written for the atmega32u4
+        //should be easy to adapt to another part.
+        hexstring(0xBAD);
+        return(1);
+    }
+    for(ra=0;ra<10;ra++)
+    {
+        rb=pdi_command(0x28000000|(ra<<8));
+        rc=pdi_command(0x20000000|(ra<<8));
+        hexstring((ra<<16)|((rb&0xFF)<<8)|(rc&0xFF));
+    }
 
+    for(ra=0;ra<3;ra++)
+    {
+        pdi_command(0x40000000|(ra<<8)|(ra&0xFF)); //low first
+        pdi_command(0x48000000|(ra<<8)|(ra&0xFF)); //then high
+    }
+    for(;ra<64;ra++)
+    {
+        pdi_command(0x400000FF|(ra<<8)); //low first
+        pdi_command(0x480000FF|(ra<<8)); //then high
+    }
+    //pdi_command(0x4C000000);
 
+    pdi_command(0xAC800000);
+    SET_RST;
+
+    ra=GET32(GPIO_DIR1);
+    ra&=~(1<<ARD_PDI_PIN);
+    ra&=~(1<<ARD_SCK_PIN);
+    PUT32(GPIO_DIR1,ra);
 
     hexstring(0xAABBCCDD);
     hexstring(0x12345678);
+    return(0);
 }
