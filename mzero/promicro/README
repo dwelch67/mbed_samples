@@ -18,3 +18,35 @@ At this time the code only supports one page/buffer, 64 instructions.
 At this time not worrying about exact timing, it is fast enough using
 count to N loops.
 
+promicro board JP6 (right side)
+
+1
+2   gnd
+3   reset
+4   vcc
+5
+6
+7
+8
+9   sck
+10  miso
+11  mosi
+12
+
+mbed
+
+lower right
+
+p26 to reset
+p25 to sck
+p24 to miso
+p23 to mosi
+p22
+p21
+
+get power/vcc from top right pin on mbed, get gnd from top left pin
+on mbed.
+
+
+
+
