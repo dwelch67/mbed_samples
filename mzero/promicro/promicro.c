@@ -325,7 +325,7 @@ int notmain ( void )
 
     unsigned int pages;
     unsigned int psize;
-    unsigned int np;
+    //unsigned int np;
     unsigned int poff;
 
     ra=0;
@@ -395,11 +395,44 @@ int notmain ( void )
         hexstring((ra<<16)|((rb&0xFF)<<8)|(rc&0xFF));
     }
 
-if(0)
+if(1)
 {
 
     pdi_command(0xAC800000);
     SET_RST;
+
+    ASMDELAY(100000);
+    CLR_RST;
+    ASMDELAY(100);
+
+    ra=pdi_command(0xAC530000);
+    if((ra&0x0000FF00)!=0x00005300)
+    {
+        hexstring(0xBAD);
+        return(1);
+    }
+    rb=0;
+    ra=pdi_command(0x30000000);
+    rb<<=8; rb|=ra&0xFF;
+    ra=pdi_command(0x30000100);
+    rb<<=8; rb|=ra&0xFF;
+    ra=pdi_command(0x30000200);
+    rb<<=8; rb|=ra&0xFF;
+    hexstring(rb);
+    if(rb!=0x001E9587)
+    {
+        //not really an error, this code is written for the atmega32u4
+        //should be easy to adapt to another part.
+        hexstring(0xBAD);
+        return(1);
+    }
+    for(ra=0;ra<10;ra++)
+    {
+        rb=pdi_command(0x28000000|(ra<<8));
+        rc=pdi_command(0x20000000|(ra<<8));
+        hexstring((ra<<16)|((rb&0xFF)<<8)|(rc&0xFF));
+    }
+
 }
 
 if(1)
@@ -431,6 +464,19 @@ if(1)
         pdi_command(0x4C000000);//|(np<<14));
         ASMDELAY(100000);
     }
+    for(ra=0;ra<10;ra++)
+    {
+        rb=pdi_command(0x28000000|(ra<<8));
+        rc=pdi_command(0x20000000|(ra<<8));
+        hexstring((ra<<16)|((rb&0xFF)<<8)|(rc&0xFF));
+    }
+
+    ra=pdi_command(0x50000000); hexstring(ra);
+    ra=pdi_command(0x58080000); hexstring(ra);
+    ra=pdi_command(0x50080000); hexstring(ra);
+
+
+
     SET_RST;
     hexstring(poff);
 }

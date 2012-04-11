@@ -53,8 +53,8 @@ promicro.clang.thumb.opt.bin : memmap vectors.o promicro.clang.bc
 dumphex : dumphex.c
 	gcc -o dumphex dumphex.c
 
-blinker.h : blinker01.s.hex dumphex
-	./dumphex blinker01.s.hex
+blinker.h : blinker02.s.hex dumphex
+	./dumphex blinker02.s.hex
 
 
 blinker01.s.hex : blinker01.s
