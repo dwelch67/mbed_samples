@@ -1,4 +1,7 @@
 
+//-------------------------------------------------------------------
+//-------------------------------------------------------------------
+
 #include "blinker.h"
 
 extern void PUT8 ( unsigned int, unsigned int );
@@ -10,49 +13,47 @@ extern void ASMDELAY ( unsigned int );
 extern unsigned int PUTGETCLR ( unsigned int, unsigned int );
 extern unsigned int PUTGETSET ( unsigned int, unsigned int );
 
-//extern void exit ( unsigned int );
-
 #define GPIO_BASE 0x50000000
 
-#define GPIO_W00 (GPIO_BASE+0x1000)
-#define GPIO_W01 (GPIO_BASE+0x1004)
-#define GPIO_W02 (GPIO_BASE+0x1008)
-#define GPIO_W03 (GPIO_BASE+0x100C)
-#define GPIO_W04 (GPIO_BASE+0x1010)
-#define GPIO_W05 (GPIO_BASE+0x1014)
-#define GPIO_W06 (GPIO_BASE+0x1018)
+//#define GPIO_W00 (GPIO_BASE+0x1000)
+//#define GPIO_W01 (GPIO_BASE+0x1004)
+//#define GPIO_W02 (GPIO_BASE+0x1008)
+//#define GPIO_W03 (GPIO_BASE+0x100C)
+//#define GPIO_W04 (GPIO_BASE+0x1010)
+//#define GPIO_W05 (GPIO_BASE+0x1014)
+//#define GPIO_W06 (GPIO_BASE+0x1018)
 #define GPIO_W07 (GPIO_BASE+0x101C)
 
 #define GPIO_DIR0 (GPIO_BASE+0x2000)
-#define GPIO_PIN0 (GPIO_BASE+0x2100)
-#define GPIO_SET0 (GPIO_BASE+0x2200)
-#define GPIO_CLR0 (GPIO_BASE+0x2280)
+//#define GPIO_PIN0 (GPIO_BASE+0x2100)
+//#define GPIO_SET0 (GPIO_BASE+0x2200)
+//#define GPIO_CLR0 (GPIO_BASE+0x2280)
 
-#define GPIO1_B00 (GPIO_BASE+0x20)
-#define GPIO1_B08 (GPIO_BASE+0x28)
-#define GPIO1_B09 (GPIO_BASE+0x29)
-#define GPIO1_B10 (GPIO_BASE+0x2A)
-#define GPIO1_B11 (GPIO_BASE+0x2B)
+//#define GPIO1_B00 (GPIO_BASE+0x20)
+//#define GPIO1_B08 (GPIO_BASE+0x28)
+//#define GPIO1_B09 (GPIO_BASE+0x29)
+//#define GPIO1_B10 (GPIO_BASE+0x2A)
+//#define GPIO1_B11 (GPIO_BASE+0x2B)
 
-#define GPIO1_B16 (GPIO_BASE+0x30)
+//#define GPIO1_B16 (GPIO_BASE+0x30)
 #define GPIO1_B17 (GPIO_BASE+0x31)
 #define GPIO1_B18 (GPIO_BASE+0x32)
-#define GPIO1_B19 (GPIO_BASE+0x33)
-#define GPIO1_B20 (GPIO_BASE+0x34)
-#define GPIO1_B21 (GPIO_BASE+0x35)
-#define GPIO1_B22 (GPIO_BASE+0x36)
-#define GPIO1_B23 (GPIO_BASE+0x37)
+//#define GPIO1_B19 (GPIO_BASE+0x33)
+//#define GPIO1_B20 (GPIO_BASE+0x34)
+//#define GPIO1_B21 (GPIO_BASE+0x35)
+//#define GPIO1_B22 (GPIO_BASE+0x36)
+//#define GPIO1_B23 (GPIO_BASE+0x37)
 #define GPIO1_B24 (GPIO_BASE+0x38)
 #define GPIO1_B25 (GPIO_BASE+0x39)
 
 
 #define GPIO_DIR1 (GPIO_BASE+0x2004)
-#define GPIO_SET1 (GPIO_BASE+0x2204)
-#define GPIO_CLR1 (GPIO_BASE+0x2284)
+//#define GPIO_SET1 (GPIO_BASE+0x2204)
+//#define GPIO_CLR1 (GPIO_BASE+0x2284)
 
-#define STCTRL   0xE000E010
-#define STRELOAD 0xE000E014
-#define STCURR   0xE000E018
+//#define STCTRL   0xE000E010
+//#define STRELOAD 0xE000E014
+//#define STCURR   0xE000E018
 
 
 #define U0ACR       0x40008020
@@ -69,7 +70,7 @@ extern unsigned int PUTGETSET ( unsigned int, unsigned int );
 
 #define SYSAHBCLKCTRL  0x40048080
 
-//0.18 RXD 0.19 TXD
+////0.18 RXD 0.19 TXD
 #define PIO0_18 0x40044048
 #define PIO0_19 0x4004404C
 #define UARTCLKDIV 0x40048098
@@ -81,7 +82,7 @@ extern unsigned int PUTGETSET ( unsigned int, unsigned int );
 #define SYSPLLCLKUEN    0x40048044
 #define MAINCLKSEL      0x40048070
 #define MAINCLKUEN      0x40048074
-#define SYSAHBCLKCTRL   0x40048080
+//#define SYSAHBCLKCTRL   0x40048080
 #define SYSAHBCLKDIV    0x40048078
 #define SYSPLLCTRL      0x40048008
 #define SYSPLLSTAT      0x4004800C
@@ -93,6 +94,7 @@ extern unsigned int PUTGETSET ( unsigned int, unsigned int );
 #define PIO1_25         0x400440C0
 #define PIO1_26         0x400440C4
 
+//-------------------------------------------------------------------
 int clock_init ( void )
 {
     unsigned int ra;
@@ -153,30 +155,6 @@ int clock_init ( void )
     PUTGETSET(SYSAHBCLKCTRL,(1<<6)); //specifically make sure gpio is enabled
     return(0);
 }
-
-
-//-------------------------------------------------------------------
-void uart_init_48_to_12 ( void )
-{
-    PUTGETSET(SYSAHBCLKCTRL,(1<<16)|(1<<12)|(1<<6));
-    //p0.18 and 0.19 are tied to the mbed interface and then on to
-    // /dev/ttyACM# on the host
-    PUT32(PIO0_18,0x00000001); //use alternate function RXD for p0.18
-    PUT32(PIO0_19,0x00000001); //use alternate function TXD for p0.19
-    PUT32(UARTCLKDIV,4); //divide 48/4 = 12 and use same init as 12MHz
-//12000000 Hz PCLK 115200 baud
-//dl 0x04 mul 0x08 div 0x05 baud 115385 diff 185
-    PUT32(U0ACR,0x00); //no autobaud
-    PUT32(U0LCR,0x83); //dlab=1; N81
-    PUT32(U0DLL,0x04); //dl = 0x0004
-    PUT32(U0DLM,0x00); //dl = 0x0004
-    PUT32(U0IER,0x00); //no interrupts
-    PUT32(U0LCR,0x03); //dlab=0; N81
-    PUT32(U0IER,0x00); //no interrupts
-    PUT32(U0FDR,(0x8<<4)|(0x5<<0)); //mul 0x08, div 0x05
-    PUT32(U0FCR,(1<<2)|(1<<1)|(1<<0)); //enable and reset fifos
-    PUT32(U0TER,(1<<7)); //transmit enable
-}
 //-------------------------------------------------------------------
 void uart_init ( void )
 {
@@ -212,25 +190,6 @@ unsigned int uart_getc ( void )
     return(GET32(U0RBR));
 }
 //-------------------------------------------------------------------
-void hexstring ( unsigned int d )
-{
-    //unsigned int ra;
-    unsigned int rb;
-    unsigned int rc;
-
-    rb=32;
-    while(1)
-    {
-        rb-=4;
-        rc=(d>>rb)&0xF;
-        if(rc>9) rc+=0x37; else rc+=0x30;
-        uart_putc(rc);
-        if(rb==0) break;
-    }
-    uart_putc(0x0D);
-    uart_putc(0x0A);
-}
-//-------------------------------------------------------------------
 void hexstrings ( unsigned int d )
 {
     //unsigned int ra;
@@ -249,14 +208,13 @@ void hexstrings ( unsigned int d )
     uart_putc(0x20);
 }
 //-------------------------------------------------------------------
-void dowait ( void )
+void hexstring ( unsigned int d )
 {
-    unsigned int ra;
-
-    ra=uart_getc();
-    uart_putc(ra);
-    if(ra==0x0D) uart_putc(0x0A);
+    hexstrings(d);
+    uart_putc(0x0D);
+    uart_putc(0x0A);
 }
+//-------------------------------------------------------------------
 
 #define ARD_RST_PIN 25
 #define ARD_SCK_PIN 24
@@ -280,16 +238,6 @@ unsigned int pdi_data_in,pdi_data_out;
 #define CLR_SCK PUT8(ARD_SCK_REG,0)
 
 #define DELX 20
-
-#define POINTER_xPTR   0x00
-#define POINTER_xPTRpp 0x04
-#define POINTER_PTR    0x08
-#define POINTER_PTRpp  0x0C
-
-#define PORTF_DIRSET 0x010006A1
-#define PORTF_OUTSET 0x010006A5
-#define PORTF_OUTCLR 0x010006A6
-
 
 //-------------------------------------------------------------------
 unsigned int pdi_command ( unsigned int command )
@@ -356,16 +304,16 @@ int notmain ( void )
     CLR_SCK;
     CLR_RST;
 
-    ASMDELAY(500000); //seems like you bounce or get more than one mbed reset
+    //seems like you bounce or get more than one mbed reset
+    //put a huge delay in so we dont start hitting the other part a
+    //number of times.
+    ASMDELAY(500000);
 
     SET_RST;
     ASMDELAY(100);
     CLR_RST;
     ASMDELAY(100);
 
-    PUT32(STCTRL,0x00000004); //disabled, no ints, use cpu clock
-    PUT32(STRELOAD,0xFFFFFF);
-    PUT32(STCTRL,0x00000005); //enabled, no ints, use cpu clock
 
     ra=pdi_command(0xAC530000);
     if((ra&0x0000FF00)!=0x00005300)
@@ -395,8 +343,6 @@ int notmain ( void )
         hexstring((ra<<16)|((rb&0xFF)<<8)|(rc&0xFF));
     }
 
-if(1)
-{
 
     pdi_command(0xAC800000);
     SET_RST;
@@ -433,10 +379,6 @@ if(1)
         hexstring((ra<<16)|((rb&0xFF)<<8)|(rc&0xFF));
     }
 
-}
-
-if(1)
-{
     psize=sizeof(rom);
     psize>>=1;
     pages=psize>>6;
@@ -475,11 +417,8 @@ if(1)
     ra=pdi_command(0x58080000); hexstring(ra);
     ra=pdi_command(0x50080000); hexstring(ra);
 
-
-
     SET_RST;
     hexstring(poff);
-}
 
     ra=GET32(GPIO_DIR1);
     ra&=~(1<<ARD_PDI_PIN);

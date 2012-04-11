@@ -1,1 +1,20 @@
 
+This example is using the cortex-m0 based mbed as an AVR ISP.
+
+The AVR board used initially is the Sparkfun pro micro 8Mhz/3.3v
+
+http://www.sparkfun.com/products/10999
+
+From an AVR document the chips with this serial isp are either byte
+mode or page mode.  This chip atmega32u4 is page mode so you load a
+temporary buffer with 64 instructions, then send one command to program
+that buffer into a page of flash.
+
+The serial protocol is quite trivial so writing code to use it or modify
+this program is simple.
+
+At this time the code only supports one page/buffer, 64 instructions.
+
+At this time not worrying about exact timing, it is fast enough using
+count to N loops.
+
