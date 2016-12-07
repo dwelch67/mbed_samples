@@ -5,9 +5,9 @@ ARMGNU?=arm-none-eabi
 
 all : blinker01.bin
 
-blinker01.bin : blinker01.s memmap
+blinker01.bin : blinker01.s flash.ld
 	$(ARMGNU)-as  blinker01.s -o blinker01.o
-	$(ARMGNU)-ld -o blinker01.elf blinker01.o -T memmap
+	$(ARMGNU)-ld -o blinker01.elf blinker01.o -T flash.ld
 	$(ARMGNU)-objdump -D blinker01.elf > blinker01.list
 	$(ARMGNU)-objcopy blinker01.elf blinker01.bin -O binary
 

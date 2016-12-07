@@ -303,6 +303,26 @@ For as many different developers you find examples from, you will find
 as many different linker scripts.  Crafting linker scripts is harder
 IMO than any of this low level peripheral programming.
 
+Since writing that I have adopted a more controlled approach, yes it
+is not as minimal as the one above, instead of the RXWAIL stuff you
+now have to add sections basically if/when the toolchain complains.
+In this case we want the toolchain to complain about not having a
+.data section if we for some reason added .data to our program
+
+MEMORY
+{
+    rom : ORIGIN = 0x00000000, LENGTH = 0x40000
+    ram : ORIGIN = 0x10000000, LENGTH = 30K
+}
+
+SECTIONS
+{
+    .text : { *(.text*) } > rom
+    .rodata : { *(.rodata*) } > rom
+    .bss : { *(.bss*) } > ram
+}
+
+
 By separating the compiler, assembler, and linker we can avoid the
 inclusion of C libraries and the link step looking for ctr0.o to boot
 the processor/program.

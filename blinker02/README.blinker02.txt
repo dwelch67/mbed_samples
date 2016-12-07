@@ -62,6 +62,14 @@ use the same steps if targeting a powerpc or msp430 or whatever.  gcc
 has nothing remotely close to resembling this flexibility and
 functionality.
 
+I have removed the llvm/clang build example, this is now gnu only.  I
+am still a huge fan of llvm and clang, but their command lines are
+a moving target and I am not going to go through and touch every example
+every rev or worse try to deal with supporting mulitple revs.  Likewise
+I supoort thumb2 extensions here.  The remaining will just build for
+generic thumb, can always refer to this Makefile if you feel you need
+thumb2 extensions.
+
 Using -nostdlib -nostartfiles -ffreestanding on the gcc command line as
 a general habit tells gnu not to try to include C/C++ libraries, I
 will provide my own _start: entry point, etc.  Basically undo all the
